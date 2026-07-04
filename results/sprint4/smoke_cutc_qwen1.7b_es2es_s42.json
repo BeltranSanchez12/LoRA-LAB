@@ -1,0 +1,20 @@
+{
+  "experiment_name": "smoke_cutc_qwen1.7b_es2es_s42",
+  "model_name": "Qwen/Qwen3-1.7B",
+  "method": "lora",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.6371226569869981,
+  "accuracy": 0.7319819819819819,
+  "f1_per_class": {
+    "negative": 0.8148148148148148,
+    "neutral": 0.3125,
+    "positive": 0.7840531561461794
+  },
+  "trainable_params": 6422528,
+  "peak_vram_gb": 8.530801152,
+  "train_time_s": 64.307,
+  "inference_latency_ms": 50.72527038129537,
+  "fallback_rate": 0.0,
+  "notes": "PEFT lora sobre Qwen/Qwen3-1.7B, fracción=full, seed=42. r=16, lr=0.0002, max_steps=465 (min_steps=80). best_val_F1=0.6498@step232. loss 0.5972545229155442->0.013820141553878784. n_train=738, n_test=444. train_dir=tass_es, eval_dir=tass_es."
+}

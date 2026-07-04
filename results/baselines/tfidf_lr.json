@@ -1,0 +1,20 @@
+{
+  "experiment_name": "tfidf_lr_cardiff_es_full",
+  "model_name": "tfidf+lr",
+  "method": "tfidf_lr",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.5664891037187947,
+  "accuracy": 0.5689655172413793,
+  "f1_per_class": {
+    "negative": 0.6108374384236454,
+    "neutral": 0.4889705882352941,
+    "positive": 0.5996592844974447
+  },
+  "trainable_params": 67941,
+  "peak_vram_gb": null,
+  "train_time_s": 4.620517008999741,
+  "inference_latency_ms": 0.8355371692279079,
+  "fallback_rate": null,
+  "notes": "TF-IDF char_wb 2-4grams + LR C=1.0 multinomial. Features: 22647, clases: 3."
+}

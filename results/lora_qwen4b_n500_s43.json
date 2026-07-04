@@ -1,0 +1,20 @@
+{
+  "experiment_name": "lora_qwen4b_n500_s43",
+  "model_name": "Qwen/Qwen3-4B",
+  "method": "lora",
+  "data_fraction": 500,
+  "seed": 43,
+  "f1_macro": 0.6951764147825035,
+  "accuracy": 0.6908045977011494,
+  "f1_per_class": {
+    "negative": 0.7379679144385026,
+    "neutral": 0.6182380216383307,
+    "positive": 0.7293233082706767
+  },
+  "trainable_params": 11796480,
+  "peak_vram_gb": 16.746995712,
+  "train_time_s": 123.5414,
+  "inference_latency_ms": 68.74135820391147,
+  "fallback_rate": 0.0,
+  "notes": "PEFT lora sobre Qwen/Qwen3-4B, fracción=500, seed=43. r=16, lr=0.0002, max_steps=315 (min_steps=80). best_val_F1=0.7202@step315. loss 0.5372026883638822->0.00034174471138379513. n_train=500, n_test=870."
+}

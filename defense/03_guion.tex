@@ -1,0 +1,225 @@
+% ============================================================
+%  GUION DE DEFENSA --- 15 minutos
+%  Proyecto: Efficient Fine-Tuning of Small Open LLMs for
+%            Spanish Sentiment Analysis (LoRA/QLoRA)
+%
+%  Para DECIRLO en voz alta: frases cortas, no prosa de paper.
+%  Arco: problema -> método -> resultados -> límites honestos
+%        -> contribución -> cierre.
+%  W1 (RoBERTuito) y W4 (H200/T4) pre-emptadas dentro del guion.
+%  Cifras trazadas al paper YA corregido (Tablas I--V, §III--VI).
+%  Marcas [apoyo visual] = sugerencia; el brief de diseño se
+%  deriva DESPUÉS, no aquí.
+% ============================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=2.4cm}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black}
+
+% ---- Comandos de apoyo ----
+\newcommand{\bloque}[2]{\medskip\noindent{\large\textbf{\textcolor{blue!45!black}{#1}}}\hfill{\small\textbf{[#2]}}\par
+  \nopagebreak\rule{\linewidth}{0.4pt}\par\nopagebreak\smallskip}
+\newcommand{\clave}[1]{\noindent\textbf{Mensaje clave:} \emph{#1}\par\smallskip}
+\newcommand{\visual}[1]{\noindent{\footnotesize\textcolor{teal!60!black}{$\square$~[apoyo visual]: #1}}\par\smallskip}
+\newcommand{\fuente}[1]{\par{\footnotesize\textcolor{gray}{Cifras: #1}}\par}
+\newcommand{\preempt}[1]{\par\smallskip\noindent{\footnotesize\textcolor{red!55!black}{\textbf{$\triangleright$ Pre-empción #1}}}\par}
+
+% Lista de frases para decir (un guion = una frase = un respiro)
+\newenvironment{decir}{\begin{itemize}[label=\textbf{--},leftmargin=1.3em,itemsep=2.5pt,topsep=3pt]}{\end{itemize}}
+
+\title{\textbf{Guion de defensa --- 15 minutos}\\[2pt]
+\large Fine-Tuning eficiente (LoRA/QLoRA) de LLMs pequeños para análisis de sentimiento en español}
+\author{Material de preparación --- Fase 3 (para decir en voz alta)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Cómo ensayar.} Cada bloque lleva su \emph{tiempo acumulado} (esquina derecha) y un
+\emph{mensaje clave} de una frase: si te pierdes, vuelve a esa frase. Cada gui\'on (\textbf{--}) es
+una frase corta, pensada para decirse de un respiro. Las marcas {\footnotesize\textcolor{teal!60!black}{$\square$~[apoyo visual]}}
+son sugerencias; las {\footnotesize\textcolor{red!55!black}{\textbf{$\triangleright$ Pre-empción}}} son
+los puntos donde \emph{tú} sacas la debilidad antes que el tribunal. Ritmo objetivo: $\approx$130--140
+palabras/min. Presupuesto: \textbf{13:30--14:00} hablado (contenido $\approx$13:45, \emph{incluida la demo de cierre en vivo}). El resto
+del cuarto de hora es margen para respiraciones, una aclaración a media charla y el alargue natural
+del directo.
+
+% ============================================================
+\bloque{1. Problema}{00:00 $\rightarrow$ 01:45 \,·\, 1 min 45 s}
+\clave{Adaptar un modelo de lenguaje a una tarea era caro; la pregunta de este trabajo es cuándo y a qué coste deja de serlo.}
+\visual{Título + tres tuits de ejemplo etiquetados +/$\,$neutral$\,$/$-$.}
+\begin{decir}
+  \item Buenos días. Os hablo de cómo adaptar modelos de lenguaje al análisis de sentimiento en español\ldots sin pagar una GPU cara.
+  \item El problema es fácil de enunciar: hay millones de tuits en español con opiniones, y queremos clasificarlos en positivo, negativo o neutral.
+  \item Pero lo difícil no es solo acertar. Es acertar \emph{barato}.
+  \item Adaptar un modelo grande a la antigua ---reescribiendo todos sus pesos--- exige hardware caro y muchos datos etiquetados. Para casi todo el mundo, eso es inviable.
+  \item Han aparecido técnicas que prometen hacerlo con una fracción del coste: LoRA y QLoRA. Pero para el español quedan preguntas sin responder.
+  \item Y de esas preguntas va este trabajo: ¿cuándo merece la pena afinar?, ¿a qué coste?, ¿y sirve para distintas variedades del español?
+\end{decir}
+
+% ============================================================
+\bloque{2. Método / Propuesta}{01:45 $\rightarrow$ 04:00 \,·\, 2 min 15 s}
+\clave{Un estudio empírico reproducible en hardware gratuito: LoRA/QLoRA sobre dos Qwen3 pequeños, frente a los encoders de referencia, en tres cortes.}
+\visual{Diagrama: modelos (Qwen3 1.7B/4B) · datasets (Cardiff, InterTASS) · los 3 cortes A/B/C.}
+\begin{decir}
+  \item Mi enfoque es un estudio empírico y reproducible. Afino dos modelos abiertos y pequeños: Qwen3 de 1.700 y de 4.000 millones de parámetros, que caben en una GPU gratuita de 16 GB.
+  \item Como referencia, los encoders clásicos del español ---BETO y XLM-RoBERTa--- afinados a la antigua.
+  \item Los datos: tuits de Cardiff para las dos primeras preguntas; e InterTASS ---España, Costa Rica y Perú--- para la tercera.
+  \item Mido con macro-F1: la media de la F1 de las tres clases. Las trata por igual, así que no se puede ignorar la clase difícil, el \emph{neutral}.
+  \item Y lo organizo en tres cortes: A, ¿cuándo afinar gana al prompting?; B, ¿gana LoRA a los encoders contando el coste?; C, ¿un adaptador de una variedad sirve para otra?
+  \item Dos garantías de rigor: los hiperparámetros de LoRA están \emph{fijos} en todos los experimentos, y el test se toca una sola vez, al final.
+\end{decir}
+
+% ============================================================
+\bloque{3. Resultados}{04:00 $\rightarrow$ 08:45 \,·\, 4 min 45 s}
+
+\noindent\textbf{3a. Corte A --- punto de cruce} \hfill {\small 04:00 $\rightarrow$ 05:15}
+\clave{El punto en que afinar supera al prompting no es universal: depende del tamaño del modelo.}
+\visual{Figura A: macro-F1 vs n (escala log), con el cruce marcado para 1.7B y 4B.}
+\begin{decir}
+  \item Primer resultado, el corte A.
+  \item Comparo afinar con LoRA frente a solo ``pedirle'' la respuesta al modelo con ejemplos en el prompt.
+  \item Para el modelo de 1.7B, afinar gana enseguida: con menos de \textbf{siete} ejemplos etiquetados ya supera a su mejor prompting.
+  \item Pero con el de 4B la historia cambia. Como de fábrica ya lo hace mejor, necesita más datos: no cruza con firmeza hasta unos \textbf{cincuenta} ejemplos.
+  \item La conclusión no es un número mágico. Es un mecanismo: cuanto mejor es el modelo sin afinar, más datos necesita el fine-tuning para superarlo.
+\end{decir}
+\fuente{Tabla~II --- 1.7B mejor prompting 0.560, LoRA 0.590 en $n{=}7$; 4B mejor prompting 0.652, LoRA 0.666 en $n{=}50$.}
+
+\medskip\noindent\textbf{3b. Corte B --- frontera de Pareto} \hfill {\small 05:15 $\rightarrow$ 08:00}
+\clave{LoRA domina la frontera calidad-coste: más calidad que los encoders entrenando una fracción de los parámetros.}
+\visual{Figura B: Pareto calidad vs parámetros (log). LoRA arriba a la izquierda; RoBERTuito marcado fuera de la frontera.}
+\begin{decir}
+  \item Segundo resultado, el corte B, y el más visual.
+  \item A datos completos, LoRA gana a los encoders. El 4B llega a \textbf{0,707} de macro-F1; el 1.7B, a \textbf{0,698}. BETO se queda en 0,661; XLM-RoBERTa, en 0,646.
+  \item Y lo hace entrenando una fracción mínima: frente a los encoders, entre \textbf{17 y 43 veces} menos parámetros con el 1.7B, y entre \textbf{9 y 24 veces} menos con el 4B.
+  \item Comparado con afinar el modelo entero, son \textbf{268 veces} menos parámetros\ldots con prácticamente la misma calidad. Afinar el modelo entero no compensa.
+\end{decir}
+\preempt{W1 --- RoBERTuito (una frase y avanzar)}
+\begin{decir}
+  \item Un apunte honesto: en la tabla hay un modelo de fábrica, RoBERTuito, con 0,758; lo reporto, pero queda \emph{fuera} de la frontera a propósito, porque está afinado en otro corpus y lo evalúo sin reentrenar ---no es comparable en igualdad de condiciones.
+  \item Contra mis baselines controlados ---BETO y XLM-R, mismo protocolo--- LoRA gana. Y sigo.
+\end{decir}
+\begin{decir}
+  \item Y una pieza más: QLoRA. Cuantizando a 4 bits, retiene entre el \textbf{97 y el 99 por ciento} de la calidad usando aproximadamente la mitad de memoria.
+  \item Eso mete el modelo de 4B en una tarjeta de consumo de 8 GB.
+\end{decir}
+\fuente{Tabla~IV --- LoRA 4B 0.707 / 1.7B 0.698; BETO 0.661, XLM-R 0.646; 17--43$\times$ (1.7B), 9--24$\times$ (4B), 268$\times$ vs full-FT; QLoRA 4B 0.701 a 6.79 GB (vs 16.7), 1.7B 0.681 a 4.93 GB (vs 8.72).}
+
+\medskip\noindent\textbf{3c. Corte C --- transferencia dialectal} \hfill {\small 08:00 $\rightarrow$ 08:45}
+\clave{Un adaptador transfiere casi siempre sin coste entre variedades; la excepción, replicada, es apuntar al español de España.}
+\visual{Figura C: los dos heatmaps 3$\times$3 (1.7B y 4B), diagonal resaltada. (Detalle 3$\times$3 $\rightarrow$ explorador, Vista~3, en Q\&A.)}
+\begin{decir}
+  \item Tercer resultado, el corte C, en un titular: un adaptador entrenado en una variedad del español sirve para otra casi sin coste.
+  \item Entreno en una y evalúo en otra ---España, Costa Rica, Perú---: hacia Costa Rica y Perú es gratis; la única excepción es apuntar al español de España, con una penalización de entre \textbf{0,031 y 0,039} de F1.
+  \item Y lo que le da peso no es el número, sino que la asimetría se \emph{repite} en los dos tamaños de modelo. El detalle 3$\times$3 lo tengo en el explorador, si preguntáis.
+\end{decir}
+\fuente{Tabla~III --- penalización a ES 0.031--0.039 (2.6--4.6$\sigma$), replicada en 1.7B y 4B; transferencia a CR/PE dentro del ruido.}
+
+% ============================================================
+\bloque{4. Límites honestos}{08:45 $\rightarrow$ 11:15 \,·\, 2 min 30 s}
+\clave{Los límites están declarados de antemano; varios resultados ``negativos'' no son fallos, son la prueba de que el experimento medía lo que decía.}
+\visual{Lista breve: dev-split · sin test formal · H200 vs T4 · un solo dataset.}
+\begin{decir}
+  \item Paso a los límites, porque la honestidad es parte del trabajo.
+  \item Sobre la penalización del corte C: en la memoria soy explícito. La describo en múltiplos del ruido entre semillas ---hasta 4,6 veces--- pero eso es una medida de \emph{magnitud}, no un test estadístico. No vendo una significancia que no he calculado.
+  \item El corte C, además, lo evalúo en el conjunto de desarrollo, no en el de test. ¿Por qué? Porque el test oficial estaba inaccesible: daba error 404.
+  \item El de desarrollo nunca se usó para entrenar ni para seleccionar, así que no hay trampa; solo aviso de que no es comparable con resultados ajenos sobre el test.
+\end{decir}
+\preempt{W4 --- H200 vs T4 (una frase y avanzar)}
+\begin{decir}
+  \item Una aclaración sobre el hardware: el título habla de una T4 gratuita de 16 GB, pero corrí en una H200.
+  \item No es contradicción: lo que sostiene la accesibilidad es la \emph{memoria pico}, entre \textbf{4,9 y 8,7 GB} ---las cifras del objetivo T4--- y eso cabe en 16 GB corra donde corra.
+  \item La H200 solo paraleliz\'o el barrido; lo único que cambiaría en una T4 es el tiempo. Y avanzo.
+\end{decir}
+\begin{decir}
+  \item Hay más límites declarados: un solo dataset en los cortes A y B, corpus pequeños en el C, y dominio Twitter. Ninguno invalida los hallazgos centrales.
+  \item Y un apunte, del lado bueno: probé la robustez a ruido real ---tildes, emojis, abreviaturas, mayúsculas--- y el único colapso claro es de los encoders \emph{cased} ante el mayúsculado (BETO pierde \textbf{0,18} de macro-F1; los LoRA, 0,01). Es un límite de los \emph{baselines}, no del método ---y os lo enseño en vivo al cerrar.
+\end{decir}
+\fuente{§V y §VI --- VRAM pico 4.93--8.72 GB (Tabla~IV); test InterTASS HTTP~404; 2.6--4.6$\sigma$ = heurístico, no test formal. Robustez: mayúsculas BETO $-$0.184 / XLM-R $-$0.110 (\texttt{results/robustness\_results.csv}, Fig.~F).}
+
+% ============================================================
+\bloque{5. Contribución}{11:15 $\rightarrow$ 12:15 \,·\, 1 min}
+\clave{La aportación no es un récord de F1, sino un mapa reproducible de cuándo, cuánto y a qué coste conviene cada opción.}
+\visual{Tres contribuciones, una línea cada una; abajo, la palabra ``reproducible''.}
+\begin{decir}
+  \item ¿Qué aporto? Tres cosas y un hilo común.
+  \item Primero, el punto de cruce prompting-a-fine-tuning para el español: depende del tamaño del modelo.
+  \item Segundo, un benchmark calidad-coste controlado donde LoRA domina a los encoders en hardware gratuito.
+  \item Tercero, una primera evidencia de asimetría dialectal en la transferencia, replicada en dos modelos.
+  \item Y el hilo común: reproducibilidad ---código, configuraciones y particiones liberadas---. No reclamo el mejor F1 absoluto, sino un mapa útil para quien decide con poco presupuesto.
+\end{decir}
+
+% ============================================================
+\bloque{6. Cierre en vivo --- demo}{12:15 $\rightarrow$ 13:45 \,·\, 1 min 30 s}
+\clave{No es una tabla más: el adaptador clasifica en directo, y el colapso cased se ve en vivo ---los encoders voltean con el mayúsculado, los LoRA aguantan.}
+\visual{Demo en vivo servida desde la DGX (H200) por túnel SSH: los 5 modelos a la vez. Slide de respaldo con el antes/después estático por si falla (Plan~B).}
+
+\noindent{\footnotesize\textcolor{teal!60!black}{$\square$~\textbf{Preparación (antes de la charla):} demo \emph{ya arrancada y con warmup hecho} en la DGX, túnel SSH abierto y probado, navegador en \texttt{localhost:7860}, frase lista para teclear. El primer clic ya va a tiempo pleno ($\approx$0,1\,s los 5 modelos); no hay espera de carga.}}\par\smallskip
+
+\begin{decir}
+  \item Os acabo de decir que los encoders \emph{cased} se hunden con las mayúsculas. En vez de otra tabla, os lo enseño en vivo.
+  \item Tecleo una frase corta y positiva, pero sutil: ``pues no está nada mal''.
+  \item Los cinco modelos la clasifican a la vez ---LoRA de 1.7B y 4B, prompting, BETO y XLM-R---. Todos: \emph{positivo}. De acuerdo.
+  \item Ahora pulso el botón de MAYÚSCULAS ---el mismo ruido de la robustez--- y vuelvo a clasificar la misma frase.
+  \item Y mirad: BETO y XLM-R voltean a \emph{negativo}. Solo por las mayúsculas. Los LoRA no se mueven: siguen en positivo.
+  \item Ahí está el hallazgo, en directo: el encoder \emph{cased} confunde el grito con enfado; el adaptador generativo, no.
+  \item Cierro como empecé: para el español, afinar barato es viable ---y aguanta el ruido real---. Gracias; quedo a vuestra disposición para las preguntas.
+\end{decir}
+
+\noindent{\footnotesize\textcolor{red!55!black}{\textbf{$\triangleright$ Plan B (obligatorio, si la demo falla):}}}
+\begin{decir}
+  \item Si el túnel o la DGX no responden: arranco el \emph{fallback} en CPU en el portátil (\texttt{python demo/app.py -{}-cpu}) ---misma demo, LoRA-1.7B, $\approx$1\,s por frase---.
+  \item Si tampoco: salto a la \emph{slide de respaldo} con la captura del antes/después (BETO y XLM-R positivo$\rightarrow$negativo; LoRA positivo) y lo cuento con la misma frase.
+  \item Regla: nunca me quedo en blanco ---la slide de respaldo está en el deck (oculta) y el mensaje es el mismo con o sin directo.
+\end{decir}
+\fuente{Demo: \texttt{demo/app.py} (GPU, 5 modelos) / \texttt{-{}-cpu} (fallback CPU). Colapso cased trazado a \texttt{results/robustness\_results.csv} (BETO $-$0,184; XLM-R $-$0,110).}
+
+% ============================================================
+\bigskip\noindent\rule{\linewidth}{0.8pt}
+\section*{Puente al Q\&A (10 min) --- enlace con el banco \texttt{02\_banco}}
+
+\noindent Las preguntas más probables ya las he \emph{tocado} en el guion; en el turno de preguntas
+solo tengo que \textbf{rematar con la versión de 10 segundos} del banco. Atajo mental:
+
+\begin{itemize}[leftmargin=1.4em,itemsep=2.5pt]
+  \item \textbf{RoBERTuito (0,758)} $\rightarrow$ ya pre-emptado en 3b: ``fuera de Pareto, otro corpus, sin reentrenar''. (W1)
+  \item \textbf{H200 vs T4} $\rightarrow$ ya pre-emptado en bloque 4: ``VRAM pico = cifras del target; solo cambia el tiempo''. (W4)
+  \item \textbf{¿Los $\sigma$ son significancia?} $\rightarrow$ ``magnitud relativa al ruido, no test; y replica en dos modelos''. (W3)
+  \item \textbf{Una sola semilla en B} $\rightarrow$ ``$\pm$0,006 a datos completos; irrelevante frente a 4--6 puntos''. (W5)
+  \item \textbf{¿El factor de parámetros?} $\rightarrow$ ``10.000$\times$ es de Hu et al.; lo mío es 17--43$\times$ / 9--24$\times$ / 268$\times$''. (W14)
+  \item \textbf{¿Uso de IA?} $\rightarrow$ ``yo orquesté y validé con gates; el diario es la traza''. (CE37/RA5)
+  \item \textbf{¿Y la robustez?} $\rightarrow$ ``el único colapso es \emph{cased} ante mayúsculas; LoRA aguanta; lo acabáis de ver en la demo''. (Sprint 6)
+\end{itemize}
+
+\noindent\textbf{Puertas que NO abrir} (no las saques tú; si te empujan, recoge y recoloca):
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item No compares tiempos de entrenamiento T4 vs H200 (no los medí en T4).
+  \item No digas que Qwen3 es ``mejor'' que Llama/Gemma (no lo medí): defiende los criterios.
+  \item No defiendas el 10.000$\times$ como cifra propia: es de Hu et al.
+  \item No afirmes causalidad dialectal (por qué ES es sensible): el dato es la asimetría, no su causa.
+  \item No presentes la robustez como exhaustiva: son 7 perturbaciones sobre un test; el mayúsculado es el hallazgo, no un \emph{survey}.
+\end{itemize}
+
+\noindent\textbf{Regla de oro:} si una pregunta toca un límite, recondúcela a su \emph{encuadre}
+(``está declarado a propósito porque\ldots'') en vez de improvisar. Respuestas largas en el banco;
+en la sala, la de 10 segundos.
+
+\medskip
+\noindent\textbf{Herramientas de respaldo} (Q\&A, \emph{no} en el discurso):
+\begin{itemize}[leftmargin=1.4em,itemsep=2.5pt]
+  \item \textbf{Pareto / cruce / transferencia} $\rightarrow$ abrir \texttt{defense/deck\_assets/explorer.html} (offline, doble clic): Vista~1 (Pareto, Corte~B), Vista~2 (cruce F1-vs-n, Corte~A), Vista~3 (transferencia 3$\times$3, Corte~C).
+  \item \textbf{Robustez / otras perturbaciones} (tildes, emojis, abreviaturas\ldots) $\rightarrow$ \texttt{figF} (heatmap de robustez, \texttt{results/figures/figF\_robustness.png}); tabla completa en \texttt{results/robustness\_results.csv}.
+  \item \textbf{¿Otra frase en la demo?} $\rightarrow$ la demo sigue abierta; pruebo la que propongan (o el modo \texttt{-{}-cpu} en el portátil).
+  \item \textbf{Trade-off de coste 4D} $\rightarrow$ \texttt{figE} (dispersión 4D, asset de reserva).
+\end{itemize}
+
+\end{document}

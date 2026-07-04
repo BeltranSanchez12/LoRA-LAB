@@ -1,0 +1,20 @@
+{
+  "experiment_name": "prompting_zeroshot_Qwen_Qwen3-1.7B",
+  "model_name": "Qwen/Qwen3-1.7B",
+  "method": "prompting_zeroshot",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.4713033050853233,
+  "accuracy": 0.5080459770114942,
+  "f1_per_class": {
+    "negative": 0.603448275862069,
+    "neutral": 0.5501066098081023,
+    "positive": 0.2603550295857988
+  },
+  "trainable_params": 0,
+  "peak_vram_gb": 1.45524736,
+  "train_time_s": 0.0,
+  "inference_latency_ms": 68.5899188072988,
+  "fallback_rate": 0.013793103448275862,
+  "notes": "Prompting prompting_zeroshot. k=0. Modelo: Qwen/Qwen3-1.7B (1015.9M params). Fallback: 1.4%. Tiempo total inferencia: 59.7s."
+}

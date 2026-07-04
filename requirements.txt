@@ -1,0 +1,30 @@
+# Core deep learning
+torch>=2.3.0
+transformers>=4.41.0
+peft>=0.11.0
+trl>=0.8.6
+bitsandbytes>=0.43.0
+accelerate>=0.30.0
+
+# Data and evaluation
+datasets>=2.18.0  # Cardiff ES se carga desde el export Parquet del Hub (sin script de carga ni trust_remote_code); compatible con datasets 4.x
+evaluate>=0.4.2
+scikit-learn>=1.4.0
+
+# Numerics and dataframes
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.13.0
+
+# Visualisation
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Configuration and utilities
+pyyaml>=6.0.0
+
+# NLP — sentiment analysis (off-the-shelf reference)
+pysentimiento>=0.7.0
+
+# Testing
+pytest>=8.0.0

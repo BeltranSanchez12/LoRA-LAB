@@ -1,0 +1,35 @@
+experiment:
+  name: cutc_qwen1.7b_es2es_s43
+  seed: 43
+  overwrite: false
+  gpu_group: A
+model:
+  base_model: Qwen/Qwen3-1.7B
+  method: lora
+  peft:
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+data:
+  processed_dir: data/processed/tass_es
+  eval_dir: data/processed/tass_es
+  train_fraction: full
+training:
+  epochs: 5
+  min_steps: 80
+  batch_size: 8
+  grad_accum: 1
+  learning_rate: 0.0002
+  warmup_ratio: 0.1
+  max_length: 256
+  lr_scheduler_type: cosine
+  eval_points: 4
+eval:
+  max_examples: null
+output:
+  results_dir: results/sprint4/

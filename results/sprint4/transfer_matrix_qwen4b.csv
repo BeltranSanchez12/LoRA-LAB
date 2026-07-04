@@ -1,0 +1,10 @@
+model,train,eval,f1_macro_mean,f1_macro_std,n_seeds,diagonal
+Qwen3-4B,ES,ES,0.6871,0.0065,3,True
+Qwen3-4B,ES,CR,0.6617,0.0148,3,False
+Qwen3-4B,ES,PE,0.6778,0.0211,3,False
+Qwen3-4B,CR,ES,0.6555,0.0103,3,False
+Qwen3-4B,CR,CR,0.6827,0.0178,3,True
+Qwen3-4B,CR,PE,0.6847,0.0175,3,False
+Qwen3-4B,PE,ES,0.6484,0.0148,3,False
+Qwen3-4B,PE,CR,0.6877,0.0109,3,False
+Qwen3-4B,PE,PE,0.6906,0.0142,3,True

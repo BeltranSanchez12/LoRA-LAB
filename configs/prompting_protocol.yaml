@@ -1,0 +1,41 @@
+prompting_protocol:
+  # Plantilla de texto plano (legacy). La usa format_prompt() y la cubren los
+  # tests; la INFERENCIA real usa el chat template del modelo (system_prompt +
+  # turnos few-shot + answer_cue), ver use_chat_template más abajo.
+  template: |
+    Analyze the sentiment of the following tweet in Spanish.
+    Respond with exactly one word: positive, negative, or neutral.
+
+    {examples}Tweet: {text}
+    Sentiment:
+
+  # --- Protocolo de chat (modelos instruct tipo Qwen3) ---
+  use_chat_template: true
+  # Clasificación: desactivar el modo "thinking" de Qwen3. Con thinking activo el
+  # modelo emite <think>...</think> y agota max_new_tokens antes de la etiqueta.
+  enable_thinking: false
+  system_prompt: >-
+    You are a sentiment classifier for Spanish tweets. Classify the tweet as
+    exactly one of these labels: positive, negative, neutral. Reply with only
+    one word (the label in English) and nothing else.
+  # Señal de respuesta añadida al último turno del usuario: fuerza al modelo a
+  # responder con la etiqueta en vez de parafrasear/hacer eco del tweet.
+  answer_cue: "Answer with exactly one word — positive, negative, or neutral:"
+
+  fallback_label: "neutral"
+  # Con thinking desactivado y el answer_cue, la etiqueta sale de inmediato; 16
+  # tokens son holgados (el parser toma la primera etiqueta que aparezca).
+  max_new_tokens: 16
+  generation_kwargs:
+    do_sample: false        # greedy (determinista)
+
+  k_values: [0, 4, 8, 16]   # zero-shot y tres configuraciones few-shot
+  example_selection:
+    method: "stratified_random"
+    seed: 42
+  # Ejemplos few-shot: se seleccionan en tiempo de ejecución de forma
+  # estratificada (seed 42) desde el train; estos campos quedan vacíos.
+  fixed_examples:
+    k4: []
+    k8: []
+    k16: []

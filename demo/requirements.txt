@@ -1,0 +1,16 @@
+# Demo de inferencia (T5) — CPU. Instalar en el portátil (recomendado en un venv):
+#   python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+#   pip install -r demo/requirements.txt
+#
+# torch: instala la rueda CPU si no tienes GPU (evita descargar CUDA):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+# NO necesita `datasets` (los 4 ejemplos few-shot van embebidos en demo/fewshot_k4.json).
+# Mínimos probados con transformers 5.12.1 / peft 0.19.1 / torch 2.12.1 en este repo;
+# transformers>=4.51 es el requisito real (soporte de Qwen3).
+
+torch>=2.2
+transformers>=4.51
+peft>=0.11
+gradio>=4.0
+pyyaml>=5.1        # lo usa src/models/prompting.py para leer el protocolo (suele venir con transformers)

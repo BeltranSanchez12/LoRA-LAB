@@ -1,0 +1,33 @@
+PERMISOS 
+chmod -R a+rwx /home/202216017/workspace/Beyond-VaR/src
+
+ABRIR UNA TERMINAL 
+cd ../.. && ./conectar_bash.sh && cd workspace/Beyond-VaR
+
+CONTENEDOR
+MONTAR EL COMPOSE_BASE_PYTHON & TIRAR ESE PROYECTO
+cd compose_base_python && docker compose up -d
+exit
+cd compose_base_python && docker compose down 
+
+
+
+CONTENEDOR PARTICULAR (CON PROYECTO 202216017, NAME BSC-JupyterLab)
+
+docker compose -p 202216017 up -d
+docker compose -p 202216017 down
+
+COPIAR ARCHIVOS A LA DGX
+
+scp ARCHIVO1 ARCHIVO2 202216017@10.245.0.12:~/workspace/
+
+MAIN 
+
+cd ../.. && ./conectar_bash.sh && cd jupyterlab_container/AI_LAB
+conda activate ~/jupyterlab_container/envs/ailab
+export HF_HOME=~/jupyterlab_container/hf_cache
+apt-get update && apt-get install -y curl
+curl -fsSL https://claude.ai/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
+claude --version
+claude

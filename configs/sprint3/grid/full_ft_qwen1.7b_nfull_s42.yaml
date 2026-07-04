@@ -1,0 +1,25 @@
+experiment:
+  name: full_ft_qwen1.7b_nfull_s42
+  seed: 42
+  overwrite: false
+  gpu_group: A
+model:
+  base_model: Qwen/Qwen3-1.7B
+  method: full_ft
+data:
+  processed_dir: data/processed/cardiff_es
+  train_fraction: full
+training:
+  epochs: 5
+  min_steps: 60
+  batch_size: 8
+  grad_accum: 1
+  learning_rate: 1.0e-05
+  warmup_ratio: 0.1
+  max_length: 256
+  lr_scheduler_type: cosine
+  eval_points: 4
+eval:
+  max_examples: null
+output:
+  results_dir: results/

@@ -1,0 +1,20 @@
+{
+  "experiment_name": "prompting_fewshot_k4_Qwen_Qwen3-1.7B",
+  "model_name": "Qwen/Qwen3-1.7B",
+  "method": "prompting_fewshot_k4",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.5435983689193641,
+  "accuracy": 0.5448275862068965,
+  "f1_per_class": {
+    "negative": 0.5471264367816092,
+    "neutral": 0.5488372093023256,
+    "positive": 0.5348314606741573
+  },
+  "trainable_params": 0,
+  "peak_vram_gb": 1.479457792,
+  "train_time_s": 0.0,
+  "inference_latency_ms": 67.85362755783417,
+  "fallback_rate": 0.0,
+  "notes": "Prompting prompting_fewshot_k4. k=4. Modelo: Qwen/Qwen3-1.7B (1015.9M params). Fallback: 0.0%. Tiempo total inferencia: 59.0s."
+}

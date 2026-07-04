@@ -1,0 +1,20 @@
+{
+  "experiment_name": "encoder_offtheshelf_pysentimiento_robertuito-sentiment-analysis",
+  "model_name": "pysentimiento/robertuito-sentiment-analysis",
+  "method": "encoder_offtheshelf",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.7582225511991996,
+  "accuracy": 0.7609195402298851,
+  "f1_per_class": {
+    "negative": 0.8204283360790774,
+    "neutral": 0.6521739130434783,
+    "positive": 0.802065404475043
+  },
+  "trainable_params": null,
+  "peak_vram_gb": null,
+  "train_time_s": null,
+  "inference_latency_ms": 47.9446862586444,
+  "fallback_rate": null,
+  "notes": "out-of-domain reference: pysentimiento/robertuito-sentiment-analysis entrenado en TASS 2020, evaluado sobre Cardiff ES test sin fine-tuning. NO incluir en la frontera de Pareto calidad-coste. Solo referencia de comparacion."
+}

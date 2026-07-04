@@ -1,0 +1,20 @@
+{
+  "experiment_name": "full_ft_qwen1.7b_nfull_s42",
+  "model_name": "Qwen/Qwen3-1.7B",
+  "method": "full_ft",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.6960955423386922,
+  "accuracy": 0.6919540229885057,
+  "f1_per_class": {
+    "negative": 0.7446043165467626,
+    "neutral": 0.6,
+    "positive": 0.7436823104693141
+  },
+  "trainable_params": 1720574976,
+  "peak_vram_gb": 15.844741632,
+  "train_time_s": 124.3417,
+  "inference_latency_ms": 32.83136119869979,
+  "fallback_rate": 0.0,
+  "notes": "PEFT full_ft sobre Qwen/Qwen3-1.7B, fracción=full, seed=42. r=None, lr=1e-05, max_steps=1150 (min_steps=60). best_val_F1=0.7099@step574. loss 0.6345210058763883->0.16991338164964204. n_train=1839, n_test=870."
+}

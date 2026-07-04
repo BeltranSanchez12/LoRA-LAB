@@ -1,0 +1,113 @@
+# --- Data directories (never commit raw or processed data) ---
+data/raw/
+data/processed/
+
+# --- Results: track small data artifacts (JSON/CSV — verified evidence behind paper
+#     tables, cheap to diff/review); exclude heavy generated outputs (figures, plots) ---
+results/figures/*
+# Exception: the paper's versioned figures must be tracked (needed to build main.tex)
+!results/figures/figA_f1_vs_n.png
+!results/figures/figA_f1_vs_n.pdf
+!results/figures/figB_quality_cost.png
+!results/figures/figB_quality_cost.pdf
+!results/figures/figC_transfer.png
+!results/figures/figC_transfer.pdf
+!results/figures/figD_per_class.png
+!results/figures/figD_per_class.pdf
+!results/figures/figE_quality_cost.png
+!results/figures/figE_quality_cost.pdf
+# Sprint 6 (apéndice/defensa, no cuerpo del paper): figura de robustez
+!results/figures/figF_robustness.png
+!results/figures/figF_robustness.pdf
+# Sprint 7: variantes del paper sin título incrustado
+!results/figures/figA_f1_vs_n_paper.png
+!results/figures/figA_f1_vs_n_paper.pdf
+!results/figures/figB_quality_cost_paper.png
+!results/figures/figB_quality_cost_paper.pdf
+!results/figures/figC_transfer_paper.png
+!results/figures/figC_transfer_paper.pdf
+!results/figures/figD_per_class_paper.png
+!results/figures/figD_per_class_paper.pdf
+!results/figures/figE_quality_cost_paper.png
+!results/figures/figE_quality_cost_paper.pdf
+results/*.png
+results/*.pdf
+results/*.svg
+results/*.jpg
+results/*.jpeg
+
+# --- Model checkpoints from local training runs (heavy binaries) ---
+/models/
+results/checkpoints/
+results/diagnostics/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Distribution / packaging ---
+*.egg-info/
+dist/
+build/
+*.egg
+
+# --- Environment variables and secrets ---
+.env
+.env.*
+*.env
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Model weights (large binary files) ---
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+# Exception: allow small weight files committed explicitly inside src/
+!src/**/*.bin
+!src/**/*.safetensors
+
+# --- HuggingFace cache ---
+.cache/
+hub/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb
+# Exception: project deliverable notebooks (e.g. Colab GPU run notebooks)
+!notebooks/*.ipynb
+
+# --- OS artefacts ---
+.DS_Store
+Thumbs.db
+
+# --- IDEs ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- Claude Code local settings (machine-specific) ---
+.claude/settings.local.json
+
+# --- pytest cache ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Sprint 6: adaptadores LoRA reconstruidos (locales). Regeneran BIT-EXACTOS con
+#     `python scripts/sprint6_reconstruct.py` (semilla 42, determinista), por lo que no se
+#     versionan los binarios (25M+47M). Para versionarlos, sustituir por:
+#         !adapters/**/*.safetensors
+adapters/

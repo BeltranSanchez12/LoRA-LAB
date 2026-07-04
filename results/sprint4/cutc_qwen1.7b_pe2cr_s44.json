@@ -1,0 +1,20 @@
+{
+  "experiment_name": "cutc_qwen1.7b_pe2cr_s44",
+  "model_name": "Qwen/Qwen3-1.7B",
+  "method": "lora",
+  "data_fraction": "full",
+  "seed": 44,
+  "f1_macro": 0.6930015497966816,
+  "accuracy": 0.7231404958677686,
+  "f1_per_class": {
+    "negative": 0.7980295566502463,
+    "neutral": 0.5045045045045045,
+    "positive": 0.7764705882352941
+  },
+  "trainable_params": 6422528,
+  "peak_vram_gb": 8.568906752,
+  "train_time_s": 47.8589,
+  "inference_latency_ms": 51.08618581046661,
+  "fallback_rate": 0.0,
+  "notes": "PEFT lora sobre Qwen/Qwen3-1.7B, fracción=full, seed=44. r=16, lr=0.0002, max_steps=340 (min_steps=80). best_val_F1=0.7793@step340. loss 0.5748733071719899->0.005312558482674991. n_train=541, n_test=242. train_dir=tass_pe, eval_dir=tass_cr."
+}

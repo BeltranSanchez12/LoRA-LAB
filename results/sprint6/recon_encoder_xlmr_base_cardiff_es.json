@@ -1,0 +1,20 @@
+{
+  "experiment_name": "encoder_finetuned_xlm-roberta-base_cardiff_es",
+  "model_name": "xlm-roberta-base",
+  "method": "encoder_finetuned",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.6464889915810161,
+  "accuracy": 0.6597701149425287,
+  "f1_per_class": {
+    "negative": 0.7024539877300614,
+    "neutral": 0.5,
+    "positive": 0.737012987012987
+  },
+  "trainable_params": 278045955,
+  "peak_vram_gb": null,
+  "train_time_s": 19.18553091585636,
+  "inference_latency_ms": 0.590428458419682,
+  "fallback_rate": null,
+  "notes": "Full fine-tuning de xlm-roberta-base sobre Cardiff ES (train completo). epochs=3, lr=2e-05, bs=16. Punto A de la frontera de Pareto calidad-coste."
+}

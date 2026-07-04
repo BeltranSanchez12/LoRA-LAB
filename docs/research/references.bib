@@ -1,0 +1,282 @@
+% BibTeX references — AI Lab: PEFT + Sentiment Analysis in Spanish
+% Maintained by: research-scout
+% Last updated: 2026-07-04
+% Key format: apellidoANNOPalabraClave
+% NOTA: DOIs y URLs verificados conceptualmente hasta agosto 2025.
+
+% ============================================================
+% PEFT METHODS — FUNDAMENTOS
+% ============================================================
+
+@inproceedings{hu2021lora,
+  author    = {Edward J. Hu and Yelong Shen and Phillip Wallis and Zeyuan Allen-Zhu
+               and Yuanzhi Li and Shean Wang and Lu Wang and Weizhu Chen},
+  title     = {{LoRA}: Low-Rank Adaptation of Large Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2022},
+  url       = {https://arxiv.org/abs/2106.09685},
+  note      = {arXiv:2106.09685}
+}
+
+@article{dettmers2023qlora,
+  author    = {Tim Dettmers and Artidoro Pagnoni and Ari Holtzman and Luke Zettlemoyer},
+  title     = {{QLoRA}: Efficient Finetuning of Quantized {LLM}s},
+  journal   = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year      = {2023},
+  volume    = {36},
+  url       = {https://arxiv.org/abs/2305.14314},
+  note      = {arXiv:2305.14314}
+}
+
+@misc{mangrulkar2022peft,
+  author    = {Sourab Mangrulkar and Sylvain Gugger and Lysandre Debut
+               and Younes Belkada and Sayak Paul and Benjamin Bossan},
+  title     = {{PEFT}: State-of-the-Art Parameter-Efficient Fine-Tuning},
+  year      = {2022},
+  url       = {https://github.com/huggingface/peft},
+  note      = {{Software} library, {Hugging Face}}
+}
+
+@inproceedings{liu2022dora,
+  author    = {Shih-Yang Liu and Chien-Yi Wang and Hongxu Yin and Pavlo Molchanov
+               and Yu-Chiang Frank Wang and Kwang-Ting Cheng and Min-Hung Chen},
+  title     = {{DoRA}: Weight-Decomposed Low-Rank Adaptation},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2402.09353},
+  note      = {arXiv:2402.09353}
+}
+
+@inproceedings{houlsby2019adapters,
+  author    = {Neil Houlsby and Andrei Giurgiu and Stanislaw Jastrzebski
+               and Bruna Morrone and Quentin de Laroussilhe and Andrea Gesmundo
+               and Mona Attariyan and Sylvain Gelly},
+  title     = {Parameter-Efficient Transfer Learning for {NLP}},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2019},
+  url       = {https://arxiv.org/abs/1902.00751},
+  note      = {arXiv:1902.00751}
+}
+
+@article{ding2023peftsurvey,
+  author    = {Ning Ding and Yujia Qin and Guang Yang and Fuchao Wei and Zonghan Yang
+               and Yusheng Su and Shengding Hu and Yulin Chen and Chi-Min Chan
+               and Weize Chen and others},
+  title     = {Parameter-Efficient Fine-Tuning of Large-Scale Pre-Trained Language Models},
+  journal   = {Nature Machine Intelligence},
+  year      = {2023},
+  volume    = {5},
+  pages     = {220--235},
+  doi       = {10.1038/s42256-023-00626-4}
+}
+
+% ============================================================
+% FEW-SHOT / DATA EFFICIENCY
+% ============================================================
+
+@inproceedings{mosbach2023fewshot,
+  author    = {Marius Mosbach and Tiago Pimentel and Shauli Ravfogel
+               and Dietrich Klakow and Yanai Elazar},
+  title     = {Few-Shot Fine-Tuning vs. In-Context Learning: {A} Fair Comparison and Evaluation},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2023},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2305.16938},
+  note      = {arXiv:2305.16938}
+}
+
+@inproceedings{min2022rethinking,
+  author    = {Sewon Min and Xinxi Lyu and Ari Holtzman and Mikel Artetxe
+               and Mike Lewis and Hannaneh Hajishirzi and Luke Zettlemoyer},
+  title     = {Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?},
+  booktitle = {Proceedings of the 2022 Conference on Empirical Methods in Natural Language
+               Processing (EMNLP)},
+  year      = {2022},
+  url       = {https://arxiv.org/abs/2202.12837},
+  note      = {arXiv:2202.12837}
+}
+
+% ============================================================
+% MODELOS ENCODER PARA ESPANOL
+% ============================================================
+
+@inproceedings{canete2020beto,
+  author    = {Jose Canete and Gabriel Chaperon and Rodrigo Fuentes
+               and Jou-hui Ho and Hojin Kang and Jorge Perez},
+  title     = {{Spanish} Pre-Trained {BERT} Model and Evaluation Data},
+  booktitle = {Proceedings of PML4DC at ICLR 2020},
+  year      = {2020},
+  url       = {https://users.dcc.uchile.cl/~jperez/papers/pml4dc2020.pdf},
+  note      = {{HuggingFace}: dccuchile/bert-base-spanish-wwm-cased}
+}
+
+@inproceedings{perez2022robertuito,
+  author    = {Juan Manuel Perez and Damian Furman and Laura Alonso Alemany
+               and Franco Luque},
+  title     = {{RoBERTuito}: a pre-trained language model for social media {Spanish}},
+  booktitle = {Proceedings of the 13th Language Resources and Evaluation Conference (LREC)},
+  year      = {2022},
+  url       = {https://arxiv.org/abs/2111.09453},
+  note      = {arXiv:2111.09453. HuggingFace: pysentimiento/robertuito-base-uncased}
+}
+
+@article{gutierrezfandino2022maria,
+  author    = {Asier Gutierrez-Fandino and Jordi Armengol-Estape and Marc Pamies
+               and Joan Llop-Palao and Joaquin Silveira-Ocampo and Casimiro Pio Carrino
+               and Carme Armentano-Oller and Carlos Rodriguez-Penagos and Aitor Gonzalez-Agirre
+               and Marta Villegas},
+  title     = {{MarIA}: {Spanish} Language Models},
+  journal   = {Procesamiento del Lenguaje Natural},
+  year      = {2022},
+  volume    = {68},
+  pages     = {39--60},
+  url       = {https://arxiv.org/abs/2107.07253},
+  note      = {arXiv:2107.07253. HuggingFace: PlanTL-GOB-ES/roberta-large-bne}
+}
+
+% ============================================================
+% DATASETS DE SENTIMIENTO EN ESPANOL
+% ============================================================
+
+@inproceedings{barbieri2022xlmt,
+  author    = {Francesco Barbieri and Luis Espinosa-Anke and Jose Camacho-Collados},
+  title     = {{XLM-T}: Multilingual Language Models in {Twitter} for Sentiment Analysis
+               and Beyond},
+  booktitle = {Proceedings of the 13th Language Resources and Evaluation Conference (LREC)},
+  year      = {2022},
+  url       = {https://arxiv.org/abs/2104.12250},
+  note      = {arXiv:2104.12250. Dataset: cardiffnlp/tweet\_sentiment\_multilingual.
+               Modelo: cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual}
+}
+
+@misc{diazgaliano2020tass,
+  author    = {Manuel Carlos Diaz-Galiano and Eugenio Martinez-Camara
+               and Maria Teresa Martin-Valdivia and L. Alfonso Urena-Lopez
+               and Salud Maria Jimenez-Zafra},
+  title     = {{TASS} 2020: Sentiment Analysis in {Spanish}},
+  year      = {2020},
+  url       = {http://tass.sepln.org/},
+  note      = {{Workshop} {TASS} 2020 ({SEPLN})}
+}
+
+@inproceedings{martinezcamara2018tass,
+  author    = {Eugenio Mart{\'i}nez-C{\'a}mara and Yudivi{\'a}n Almeida-Cruz
+               and Manuel Carlos D{\'i}az-Galiano and Suilan Est{\'e}vez-Velarde
+               and Miguel {\'A}ngel Garc{\'i}a-Cumbreras and Manuel Garc{\'i}a-Vega
+               and Yoan Guti{\'e}rrez and Arturo Montejo-R{\'a}ez and Andr{\'e}s Montoyo
+               and Rafael Mu{\~n}oz and Alejandro Piad-Morffis and Julio Villena-Rom{\'a}n},
+  title     = {Overview of {TASS} 2018: Opinions, Health and Emotions},
+  booktitle = {Proceedings of {TASS} 2018: Workshop on Semantic Analysis at {SEPLN},
+               {CEUR} Workshop Proceedings, vol.~2172, Sevilla, Spain},
+  year      = {2018},
+  pages     = {13--27},
+  url       = {https://ceur-ws.org/Vol-2172/p0_overview_tass2018.pdf}
+}
+
+% ============================================================
+% TRANSFERENCIA DIALECTAL Y CROSS-LINGUAL CON ADAPTADORES
+% ============================================================
+
+@inproceedings{pfeiffer2020madx,
+  author    = {Jonas Pfeiffer and Ivan Vulic and Iryna Gurevych and Sebastian Ruder},
+  title     = {{MAD-X}: An Adapter-Based Framework for Multi-Task Cross-Lingual Transfer},
+  booktitle = {Proceedings of the 2020 Conference on Empirical Methods in Natural Language
+               Processing (EMNLP)},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2005.00052},
+  doi       = {10.18653/v1/2020.emnlp-main.617}
+}
+
+@inproceedings{ustun2020udapter,
+  author    = {Ahmet {\"U}st{\"u}n and Arianna Bisazza and Gosse Bouma and Gertjan van Noord},
+  title     = {{UDapter}: Language Adaptation for Truly Universal Dependency Parsing},
+  booktitle = {Proceedings of the 2020 Conference on Empirical Methods in Natural Language
+               Processing (EMNLP)},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2004.14327},
+  note      = {arXiv:2004.14327}
+}
+
+% ============================================================
+% PEFT EN TEXTO CLINICO EN ESPANOL/CATALAN (ANCHOR)
+% ============================================================
+
+@inproceedings{mirandaescalada2023distemist,
+  author    = {Antonio Miranda-Escalada and Luis Gasc{\'o} and Salvador Lima-L{\'o}pez
+               and Eul{\`a}lia Farr{\'e}-Maduell and Darryl Estrada
+               and Anastasios Nentidis and Anastasia Krithara
+               and Georgios Katsimpras and Georgios Paliouras and Martin Krallinger},
+  title     = {Overview of {DisTEMIST} at {BioASQ}: Automatic detection and
+               normalization of diseases from clinical texts: results, methods,
+               evaluation and multilingual resources},
+  booktitle = {Working Notes of {CLEF} 2022 --- Conference and Labs of the
+               Evaluation Forum. {CEUR} Workshop Proceedings, vol.~3180.
+               Bologna, Italy},
+  year      = {2022},
+  pages     = {179--203},
+  url       = {https://ceur-ws.org/Vol-3180/paper-11.pdf}
+}
+
+% ENTRADA ELIMINADA (2026-06-05, research-scout):
+% garciapablos2024qlora — Garcia-Pablos, Perez, Cuadros, "Efficient Clinical NLP in Spanish
+% with QLoRA", Procesamiento del Lenguaje Natural (SEPLN), 2024.
+% RAZON: no fue posible confirmar la existencia de este paper con este titulo exacto, estos
+% autores y este venue. La URL apuntaba a la pagina general de la revista SEPLN (no a un
+% articulo especifico), y sin acceso a busqueda web no se localizo DOI ni numero de revista.
+% Aitor Garcia-Pablos (Vicomtech) trabaja en NLP clinico en espanol, pero la existencia
+% de este articulo especifico no esta confirmada.
+% Ver nota en docs/research/sota.md, seccion D "Anchor clinico".
+% Si el equipo encuentra la referencia verificada, anadir con clave garciapablosANNOPalabra
+% y DOI real.
+
+% ============================================================
+% LLMs PEQUENOS MULTILINGUES (MODELOS BASE CANDIDATOS)
+% ============================================================
+
+@misc{qwen3technicalreport2025,
+  author    = {{Qwen Team} and Alibaba Cloud},
+  title     = {{Qwen3} Technical Report},
+  year      = {2025},
+  url       = {https://arxiv.org/abs/2505.09388},
+  note      = {arXiv:2505.09388}
+}
+
+@misc{grattafiori2024llama32,
+  author    = {Aaron Grattafiori and others},
+  title     = {The {Llama} 3 Herd of Models},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2407.21783},
+  note      = {arXiv:2407.21783}
+}
+
+@misc{team2024gemma2,
+  author    = {{Gemma Team} and Google DeepMind},
+  title     = {{Gemma} 2: Improving Open Language Models at a Practical Size},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2408.00118},
+  note      = {arXiv:2408.00118}
+}
+
+% ============================================================
+% CONECTORES / REFERENCIAS ADICIONALES
+% ============================================================
+
+@inproceedings{conneau2020xlmr,
+  author    = {Alexis Conneau and Kartikay Khandelwal and Naman Goyal and Vishrav Chaudhary
+               and Guillaume Wenzek and Francisco Guzman and Edouard Grave and Myle Ott
+               and Luke Zettlemoyer and Veselin Stoyanov},
+  title     = {Unsupervised Cross-lingual Representation Learning at Scale},
+  booktitle = {Proceedings of the 58th Annual Meeting of the Association for Computational
+               Linguistics (ACL)},
+  year      = {2020},
+  doi       = {10.18653/v1/2020.acl-main.747}
+}
+
+@inproceedings{pfeiffer2021adapterfusion,
+  author    = {Jonas Pfeiffer and Aishwarya Kamath and Andreas Ruckle
+               and Kyunghyun Cho and Iryna Gurevych},
+  title     = {{AdapterFusion}: Non-Destructive Task Composition for Transfer Learning},
+  booktitle = {Proceedings of the 16th Conference of the European Chapter of the
+               Association for Computational Linguistics (EACL)},
+  year      = {2021},
+  doi       = {10.18653/v1/2021.eacl-main.39}
+}

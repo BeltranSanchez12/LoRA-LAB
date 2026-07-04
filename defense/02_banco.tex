@@ -1,0 +1,402 @@
+% ============================================================
+%  BANCO DE PREGUNTAS PARA LA DEFENSA
+%  Proyecto: Efficient Fine-Tuning of Small Open LLMs for
+%            Spanish Sentiment Analysis (LoRA/QLoRA)
+%
+%  Organización: (A) blindadas P1 (debilidades críticas),
+%  (B) por nivel y tema [básico/intermedio/avanzado/trampa],
+%  (C) preguntas que NO quieres que te hagan.
+%  Cada entrada: respuesta modelo + Respaldo (tabla/sección)
+%  + [10 s] de seguridad (en las críticas) + Encuadre.
+%  Fuente de debilidades: defense/00_inventario.md (W1..W14).
+%  Cero cifras inventadas; conocimiento externo en rojo.
+% ============================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{margin=2.4cm}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black}
+
+% ---- Comandos de apoyo ----
+\newcommand{\externo}[1]{{\footnotesize\textcolor{red!55!black}{[externo: #1]}}}
+\newcommand{\Q}[1]{\medskip\par\noindent\textbf{\textcolor{blue!45!black}{P.}}\ \textit{#1}\par\nopagebreak\smallskip}
+\newcommand{\resp}[1]{\par\smallskip\noindent{\footnotesize\textbf{Respaldo:} #1}\par}
+\newcommand{\seg}[1]{\par\noindent\textbf{\textcolor{red!55!black}{[10 s]}}\ \textit{#1}\par}
+\newcommand{\encuadre}[1]{\par\noindent\textbf{Encuadre:} #1\par}
+\newcommand{\puerta}[1]{\par\noindent\textbf{\textcolor{orange!75!black}{Puerta que no abrir:}} #1\par}
+\newcommand{\nivelbadge}[1]{\hfill{\footnotesize\textcolor{gray}{[#1]}}}
+
+\title{\textbf{Banco de preguntas para la defensa}\\[2pt]
+\large Fine-Tuning eficiente (LoRA/QLoRA) de LLMs pequeños para análisis de sentimiento en español}
+\author{Material de preparación --- Fase 2}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Cómo usar.} Lee la \emph{respuesta modelo} para entenderla; memoriza la
+\textbf{\textcolor{red!55!black}{[10 s]}} para soltarla bajo presión; ten claro el \emph{Encuadre}
+(por qué esto juega a favor del diseño) y la \emph{Puerta que no abrir} (lo que no debes sacar tú).
+Todo número está trazado a \texttt{paper/main.tex} (Tablas I--V o \S). Las debilidades siguen la
+numeración del inventario (W1--W14).
+
+% ============================================================
+\section*{A. Respuestas blindadas (debilidades P1)}
+% ============================================================
+\addcontentsline{toc}{section}{A. Respuestas blindadas (P1)}
+
+\subsection*{W1 --- RoBERTuito saca 0.758, más que tu mejor modelo (0.707)}
+\Q{Un modelo de fábrica, RoBERTuito, obtiene macro-F1 0.758, por encima de tu mejor resultado
+(Qwen3-4B LoRA, 0.707). ¿No te gana algo que ni siquiera entrenaste? \nivelbadge{trampa}}
+RoBERTuito está en la Tabla~I marcado con $\dagger$ y \textbf{fuera de la frontera de Pareto a
+propósito}. La razón es metodológica: fue afinado sobre \emph{TASS~2020}, un corpus distinto, y se
+evalúa \emph{zero-shot} sobre Cardiff~ES. No es una comparación controlada: mide ``qué hay ya
+entrenado en otro dominio'', no ``qué consigue mi método en igualdad de condiciones''. Mis baselines
+controlados ---BETO (0.661) y XLM-RoBERTa (0.646)--- sí comparten protocolo: parten de pesos
+públicos, se entrenan en Cardiff~ES \emph{train} y se evalúan en Cardiff~ES \emph{test}. Contra
+esos, LoRA gana 4--6 puntos. La honestidad exige reportar RoBERTuito (por eso está en la tabla),
+pero también señalar por qué no es comparable. Es la \emph{misma} lógica por la que excluí
+\texttt{cardiffnlp/twitter-xlm-roberta} (afinado sobre el propio dataset del test): no se premia
+haber entrenado sobre datos del test.
+\resp{Tabla~I (nota $\dagger$: ``out-of-domain reference, excluded from the Pareto frontier''); \S III-B; \S IV-A baselines.}
+\seg{RoBERTuito está fuera del frente a propósito: lo entrenaron en otro corpus (TASS 2020) y lo
+evalúo zero-shot, no es comparación controlada. Contra los baselines que sí comparten protocolo
+(BETO 0.661), LoRA gana 4--6 puntos.}
+\encuadre{El 0.758 no es un fallo de mi método; es prueba de que reporto con honestidad una
+referencia externa aunque me supere, y de que distingo qué es y qué no es una comparación justa.}
+\puerta{No acuses a RoBERTuito de ``hacer trampa'' ni afirmes que tus modelos lo batirían si los
+entrenaras en TASS~2020 (no lo mediste). Limítate a ``no es comparable''.}
+
+\subsection*{W4 --- Corriste en H200 pero el título dice free-tier / T4 16 GB}
+\Q{El título y la tesis hablan de hardware gratuito (T4 16~GB), pero los experimentos corrieron en
+NVIDIA H200. ¿No es una contradicción que invalida la premisa? \nivelbadge{trampa}}
+La afirmación ``free-tier'' es sobre \textbf{viabilidad}, y la viabilidad la determina la
+\textbf{VRAM pico}, que mido por celda con \texttt{torch.cuda.max\_memory\_allocated()}. Esas cifras
+(Tabla~IV: LoRA-1.7B 8.72~GB, QLoRA-4B 6.79~GB, QLoRA-1.7B 4.93~GB) son \emph{las del target T4}:
+miden la memoria que reservan los tensores para ese batch, secuencia y precisión, y por tanto caben
+en una T4 de 16~GB \emph{corra donde corra} el experimento. El H200 se usó solo para
+\emph{paralelizar} el barrido (66 celdas de Cut~A + 54 de Cut~C) en tiempo razonable. Lo único que
+cambia entre H200 y T4 es el \emph{wall-clock} de entrenamiento, y eso lo declaro explícitamente como
+limitación (\S V). Las cifras de VRAM, que son las que sostienen la tesis de accesibilidad, valen
+como cota superior para la T4.
+\resp{\S III-C (``Peak GPU VRAM tracked per cell\ldots to validate feasibility on 16~GB free-tier hardware''); Tabla~IV (columna VRAM); \S V (``hardware discrepancy'').}
+\seg{Free-tier es una afirmación sobre VRAM pico, no sobre la GPU concreta: las cifras de VRAM
+(4.93--8.72~GB) son las del target T4 y caben en 16~GB corra donde corra. El H200 solo aceleró el
+barrido; lo único que cambia es el tiempo de entrenamiento, y lo digo como limitación.}
+\encuadre{Medir VRAM pico por celda fue una decisión de diseño \emph{deliberada}, precisamente para
+poder hacer esta afirmación con rigor. No es un parche a posteriori: es la métrica que separa
+``cabe en T4'' de ``no cabe''.}
+\puerta{No te metas en tiempos de entrenamiento comparados T4 vs H200 (no los mediste en T4): ese es
+el único eje donde no tienes el dato. Reconduce siempre a VRAM.}
+
+\subsection*{W5 --- Cut B usa una sola semilla}
+\Q{Cut~B se basa en una única semilla (42). ¿No es frágil sacar conclusiones de calidad y coste de
+un solo run? \nivelbadge{avanzado}}
+La elección está justificada con datos, no por comodidad: la \textbf{varianza de semilla a datos
+completos es despreciable} ---Qwen3-1.7B full-data LoRA tiene std $\pm0.006$ sobre tres semillas
+(Tabla~II)---. Con esa varianza, una sola semilla es representativa. Además, \textbf{no todo Cut~B es
+single-seed}: la condición central (full-data LoRA en ambos modelos) sí lleva tres semillas y se
+reporta como media$\pm$std ($0.698\pm0.006$ y $0.707\pm0.022$). El single-seed se aplica a los
+spot-checks (QLoRA, full-FT), donde el objetivo es \emph{ubicar el punto} en el frente coste-calidad.
+Las diferencias relevantes de Cut~B ---LoRA vs encoders: 4--6 puntos; QLoRA vs LoRA: 0.5--1.7
+puntos--- son mucho mayores que $\pm0.006$.
+\resp{\S III-C (``Seed Policy''); \S IV-B; Tabla~II (fila ``full'', std $\pm0.006$); Tabla~IV.}
+\seg{A datos completos la varianza de semilla es $\pm0.006$ (Tabla~II): irrelevante frente a los
+4--6 puntos que separan LoRA de los encoders. Y la condición clave, full-data LoRA, sí lleva tres
+semillas.}
+\encuadre{Usar tres semillas donde importa (toda la curva de Cut~A; full-data LoRA) y una donde la
+varianza es despreciable es eficiencia de cómputo \emph{informada}, coherente con la restricción
+free-tier del proyecto.}
+
+\subsection*{W14 --- El ``$10.000\times$'' de la literatura frente a mis cifras}
+\Q{En la literatura LoRA se habla de $\sim$10.000$\times$ menos parámetros. ¿Qué reduces tú, y no es
+un overclaim? \nivelbadge{intermedio}}
+\textbf{No hay overclaim}: el paper reserva el 10.000$\times$ para lo que es ---el \textbf{titular de
+Hu et al.} \externo{Hu et al., 2021} sobre GPT-3 (175\,B), citado en \S II-A--- y reporta \emph{mis}
+cifras a mi escala (Tabla~IV). Frente a los encoders full-fine-tuned: $\approx$\textbf{17--43$\times$}
+con el 1.7B (6.42\,M vs 110\,M/278\,M) y $\approx$\textbf{9--24$\times$} con el 4B (11.80\,M); y
+$\approx$\textbf{268$\times$} frente a un full-FT del propio Qwen ($1{,}72$\,B$/6.42$\,M). El mensaje
+sustantivo ---PEFT entrena órdenes de magnitud menos parámetros y aun así supera a los encoders en
+calidad--- se sostiene con los números correctos.
+\resp{\S II-A (10.000$\times$ = Hu et al./GPT-3); Tabla~IV (6.42\,M, 11.80\,M, 1.72\,B); Tabla~I (110\,M, 278\,M). \externo{Hu et al., 2021}}
+\seg{No hay overclaim: 10.000$\times$ es el titular de Hu et al. sobre GPT-3; lo mío, a mi escala
+(Tabla~IV), es 17--43$\times$ (1.7B) y 9--24$\times$ (4B) vs los encoders, y 268$\times$ vs un
+full-FT del propio modelo.}
+\encuadre{Distinguir el resultado de la literatura de mis cifras a su escala demuestra dominio y
+honestidad; el paper ya las separa explícitamente, sin inflar.}
+
+\subsection*{W3 --- ``2.6--4.6$\sigma$'': ¿es significancia estadística?}
+\Q{En Cut~C hablas de penalizaciones de 2.6--4.6$\sigma$. ¿Eso es significancia estadística? ¿Hiciste
+un test de hipótesis? \nivelbadge{trampa}}
+No es significancia estadística, y lo \textbf{digo explícitamente en el paper} (\S IV-C): el criterio
+de $2\sigma$ es un \emph{heurístico de magnitud} relativa al ruido entre semillas, no un $p$-valor.
+No hay test de hipótesis ni corrección por comparaciones múltiples sobre la matriz $3\times3\times2$.
+Lo que sí puedo defender: (a)~la penalización al evaluar en ES es \emph{grande} respecto al ruido
+(hasta 4.6$\sigma$), y (b)~\textbf{replica en ambos tamaños de modelo} (1.7B y 4B), lo cual es una
+forma de robustez empírica. Declarar la limitación es parte del rigor; el test formal queda como
+\emph{future work} explícito (\S VI).
+\resp{\S IV-C (párrafo: ``the $2\sigma$ criterion is a magnitude heuristic, not a statistical significance threshold''); \S VI (future work: test formal con corrección).}
+\seg{No es significancia, y lo digo en el paper: $2\sigma$ es magnitud relativa al ruido, no un
+$p$-valor. Lo que sostengo es que la penalización a ES es grande \emph{y} replica en 1.7B y 4B.}
+\encuadre{La asimetría se presenta como hallazgo \emph{sugerente y reproducible} con sus límites
+declarados. Anticipar la objeción yo mismo (en el propio paper) es ciencia honesta, no una grieta.}
+
+\subsection*{W2 --- Cut C evaluado en dev, no en test}
+\Q{Evalúas Cut~C en los splits de \emph{desarrollo}, no en test. ¿No infla eso los resultados o los
+hace incomparables? \nivelbadge{avanzado}}
+Es una decisión \textbf{honesta y forzada}, no de modelado: el gold de test de InterTASS~2018 se
+distribuye como un fichero \texttt{.qrel} que devolvía \textbf{HTTP~404} (inaccesible) en el momento
+del trabajo. El split de \emph{dev} \textbf{no se usó en entrenamiento ni en selección de
+checkpoint} ---esa usó un 15\% \emph{held-out} separado del train (131/96/96)---, así que sigue
+siendo un conjunto de evaluación no visto: no hay fuga ni inflado. La única consecuencia, que declaro
+explícitamente, es que estos números \textbf{no son comparables} con sistemas que reportaron sobre el
+test de InterTASS. Pero la conclusión de Cut~C (la asimetría hacia ES) es \emph{interna} a mi matriz,
+evaluada de forma consistente en las tres variedades sobre el mismo tipo de split: la comparación
+\emph{dentro} del experimento es válida.
+\resp{\S III-A (``\texttt{.qrel}\ldots HTTP~404''; dev 444/242/262; held-out 15\% 131/96/96); \S IV-C (nota metodológica); \S VI (limitación).}
+\seg{El test daba 404. Uso dev, que nunca tocó el entrenamiento ni la selección (esa usó un held-out
+aparte): no hay fuga. Solo deja de ser comparable con resultados de test ajenos, y lo aviso.}
+\encuadre{Ante un dato inaccesible, la opción rigurosa es evaluar en un split limpio y declararlo,
+no forzar una comparación imposible. La asimetría, además, replica en dos modelos.}
+
+\subsection*{IA --- Uso de IA en el trabajo (CE37/RA5, fuera de W1--W14)}
+\Q{¿Qué hiciste tú y qué hizo la IA en este proyecto? ¿Cómo garantizas que entiendes lo entregado?
+\nivelbadge{trampa --- CE37/RA5}}
+Actué como \textbf{orquestador y director}, no como ejecutor manual de cada línea. Yo definí el
+alcance y las tres preguntas de investigación, descompuse el trabajo en sprints con \emph{specs} y
+\emph{gates}, y revisé y validé cada entregable antes de avanzar: el propio diario documenta
+\emph{checkpoints humanos} (p.ej., el grid del Sprint~3 quedó ``parado en el checkpoint humano antes
+de lanzar el barrido completo''). Bajo esa dirección, subagentes especializados ejecutaron tareas
+acotadas: \texttt{project-planner} (backlog y presupuesto), \texttt{research-scout} (estado del arte
+y \texttt{.bib}), \texttt{ml-dev} (pipeline, fine-tuning, barrido), \texttt{qa-validator} (tests y
+auditoría) y \texttt{memoir-writer} (paper y diario). Garantizo la comprensión de tres maneras
+verificables: (1)~puedo \textbf{reconstruir la matemática desde cero} (LoRA $\Delta W=BA$, macro-F1,
+el mecanismo del punto de cruce); (2)~\textbf{audité los resultados} y detecté yo mismo
+inconsistencias (el ``10.000$\times$'', la evaluación en dev de Cut~C); (3)~el \textbf{diario de
+sesiones por sprint} es la traza completa del uso de IA ---qué agente produjo qué artefacto, con
+fechas---, que es justamente lo que sostiene la declaración de integridad.
+\resp{\texttt{diary/sprint-01..04.md} (columnas Tarea/Agente/Artefacto, fechas; ``checkpoint humano antes de lanzar el grid''); \texttt{.claude/agents/*.md} (roles de cada subagente).}
+\seg{Yo dirigí: definí preguntas, sprints y gates, y validé cada entrega; los subagentes ejecutaron
+bajo mi supervisión. Lo entiendo porque puedo reconstruir la matemática y auditar las cifras, y el
+diario documenta cada sesión de IA.}
+\encuadre{El uso de IA está \emph{gobernado por gates humanos} y es \emph{auditable} vía el diario:
+no es un atajo opaco, sino un flujo dirigido y trazado --- que es lo que pide CE37/RA5.}
+\puerta{Ni lo minimices (``lo hice todo yo a mano'') ni lo sobre-atribuyas (``lo hizo la IA sola'').
+La respuesta honesta es orquestación + validación humana con traza documental.}
+
+% ============================================================
+\section*{B. Por nivel y tema}
+% ============================================================
+\addcontentsline{toc}{section}{B. Por nivel y tema}
+
+\subsection*{B.1 Básico (conceptos)}
+
+\Q{¿Qué es LoRA, en una frase? \nivelbadge{básico --- PEFT}}
+Congelar el modelo y entrenar solo una corrección de \emph{rango bajo} $\Delta W = BA$ añadida a
+ciertas matrices de pesos, de modo que se actualizan millones de parámetros en vez de miles de
+millones.
+\resp{\S III-C; \S II-A.}
+
+\Q{¿En qué se diferencia QLoRA de LoRA? \nivelbadge{básico --- PEFT}}
+QLoRA hace lo mismo que LoRA pero, además, carga el modelo base \emph{cuantizado a 4 bits} (NF4) para
+ahorrar memoria. Resultado: 1.8--2.5$\times$ menos VRAM pico a cambio de $\approx$2.4$\times$ más
+tiempo y $\approx$2$\times$ más latencia.
+\resp{\S III-C; Tabla~IV.}
+
+\Q{¿Qué es macro-F1 y por qué no usas accuracy? \nivelbadge{básico --- evaluación}}
+Es la media \emph{sin pesos} de la F1 de las tres clases. Se usa porque el test está balanceado pero
+la dificultad no (neutral es la clase difícil); accuracy podría salir alta ignorando neutral, y
+macro-F1 obliga a no abandonarla.
+\resp{\S III-D; Tabla~V (neutral: XLM-R 0.500, BETO 0.550).}
+
+\Q{¿Qué son los tres ``cuts''? \nivelbadge{básico --- diseño}}
+Cut~A: cuándo el fine-tuning gana al prompting (eficiencia de datos). Cut~B: LoRA vs encoders en
+calidad-coste (Pareto). Cut~C: transferencia entre variedades de español (ES/CR/PE).
+\resp{\S III-C; \S IV.}
+
+\Q{¿Qué modelos y datasets usas? \nivelbadge{básico --- diseño}}
+Modelos: Qwen3-1.7B y 4B (a afinar); BETO, XLM-R, TF-IDF, RoBERTuito (referencias). Datos:
+Cardiff~NLP tweet sentiment ES (Cuts A/B) e InterTASS~2018 ES/CR/PE (Cut~C).
+\resp{\S III-A; \S III-B.}
+
+\Q{¿Qué es ``prompting'' frente a ``fine-tuning'' aquí? \nivelbadge{básico --- método}}
+Prompting: pedirle la respuesta al modelo sin tocar sus pesos (zero/few-shot). Fine-tuning: ajustar
+pesos (vía LoRA) con ejemplos etiquetados. El experimento clave (Cut~A) usa el \emph{mismo} prompt en
+ambos, así que la única variable es la presencia de pesos actualizados.
+\resp{\S III-C (objetivo SFT, prompt idéntico); \S III-D.}
+
+\subsection*{B.2 Intermedio (decisiones de diseño)}
+
+\Q{¿Por qué Qwen3 y no Llama o Gemma? ¿Y por qué no un 7B+? \nivelbadge{intermedio --- D1}}
+El paper justifica Qwen3 por tres criterios (\S III-B): fuerte soporte multilingüe (relevante para
+español), licencia Apache~2.0 y compatibilidad con QLoRA en 16~GB. \emph{No} se hace un head-to-head
+contra Llama/Gemma: elegir una familia abierta y pequeña que cumpla esos tres criterios es una
+decisión de \emph{alcance}, no una afirmación de superioridad. Y no un 7B+ porque no encaja en el
+presupuesto de VRAM del target free-tier (escalar a 8B bajo QLoRA queda como \emph{future work}).
+\resp{\S III-B; \S VI.}
+\puerta{No afirmes que Qwen3 es ``mejor'' que Llama/Gemma: no lo mediste. Defiende los criterios, no
+un ranking.}
+
+\Q{¿Por qué no usas un LLM grande o cerrado de referencia (p.ej.\ GPT-4)? \nivelbadge{intermedio --- alcance}}
+Porque rompería las dos premisas del estudio: modelos \emph{abiertos} (open-weight, para poder afinar
+y liberar los adaptadores) y \emph{free-tier} (reproducible sin créditos de cloud de pago). La
+pregunta de investigación es precisamente el régimen 1--4B abierto en hardware gratuito (\S I); un
+modelo grande o de API cerrada no es comparable ni reproducible en ese marco.
+\resp{\S I (gap: ``small open-weight 1--4B on free-tier''); título; \S III-B.}
+
+\Q{¿Por qué adaptas solo \texttt{\{q,k,v,o\}\_proj}? \nivelbadge{intermedio --- D5}}
+Es la convención LoRA sobre las proyecciones de atención; mantiene los parámetros entrenables bajos
+(6.42\,M / 11.80\,M) y es suficiente para superar a los encoders. Ampliar a las MLP subiría el coste
+sin ser el objeto del estudio.
+\resp{\S III-C; Tabla~IV.}
+
+\Q{¿Por qué excluiste \texttt{cardiffnlp/twitter-xlm-roberta}? \nivelbadge{intermedio --- D2}}
+Porque fue afinado sobre el mismo dataset que uso como test: reportarlo como baseline sería
+\emph{fuga de distribución} y una comparación injusta. Es la misma razón por la que RoBERTuito queda
+fuera de la frontera.
+\resp{\S III-B; \texttt{docs/research/xlmt\_leakage\_check.md}.}
+
+\Q{¿Por qué descartas la etiqueta NONE en Cut~C? \nivelbadge{intermedio --- D13}}
+Porque NONE significa ``sin objetivo del que opinar'', conceptualmente distinto de neutral (``hay
+postura pero no polar''). Fusionarlos contaminaría el esquema de polaridad de tres clases.
+\resp{\S III-A; \S IV-C.}
+
+\Q{¿Por qué eliges el checkpoint por val-F1 y no el último? \nivelbadge{intermedio --- diseño}}
+Para evitar overfitting tardío: se evalúa la val macro-F1 cuatro veces y se queda el mejor. La
+selección de hiperparámetros usa solo validación; el test se toca una vez al final (sin fuga).
+\resp{\S III-C (``BestValF1Callback''); \S III-D.}
+
+\Q{¿Por qué $r=16$, $\alpha=32$, y fijos en todas las celdas? \nivelbadge{intermedio --- D6}}
+Para \emph{aislar} el efecto que estudias (tamaño de datos en Cut~A, variedad en Cut~C). Si variaras
+$r$ a la vez, no sabrías si los cambios vienen de los datos o de los hiperparámetros. Un barrido de
+$r$ no es el objeto del trabajo.
+\resp{\S III-C.}
+
+\Q{¿Por qué un suelo de 80 pasos de entrenamiento? \nivelbadge{intermedio --- diseño}}
+Para que las fracciones diminutas ($n=4,7,10$) no queden infraentrenadas: con tan pocos ejemplos,
+``5 épocas'' son poquísimos pasos. La fórmula es $\text{max\_steps}=\max(80,\,5\lceil n/8\rceil)$.
+\resp{\S III-C (``Training Schedule'').}
+
+\subsection*{B.3 Avanzado (mecanismos e interpretación)}
+
+\Q{Explica el mecanismo del punto de cruce: ¿por qué el 4B lo retrasa? \nivelbadge{avanzado --- Cut A}}
+Porque el suelo de calidad del prompting depende del conocimiento preentrenado: las demostraciones
+del prompt comunican formato y espacio de etiquetas, no el mapeo \externo{Min et al., 2022}. El 4B
+parte de un suelo más alto (mejor prompting 0.652 vs 0.560 del 1.7B), así que el fine-tuning necesita
+más señal para superarlo: el cruce pasa de $n<7$ (1.7B) a $n\approx50$ (4B).
+\resp{\S IV-A; Tabla~II; \S V. \externo{Min et al., 2022}}
+
+\Q{¿Por qué neutral es la clase difícil, y qué dice eso de la tarea? \nivelbadge{avanzado --- Cut B}}
+Porque neutral es la \emph{ausencia} de señal afectiva, sin patrón superficial distintivo. Que el
+orden positivo$\geq$negativo$>$neutral se repita en \emph{todos} los modelos (encoders y generativos)
+indica que es propiedad de la tarea, no de una arquitectura.
+\resp{\S IV-B; Tabla~V.}
+
+\Q{¿Qué significa exactamente ``dominar la frontera de Pareto''? \nivelbadge{avanzado --- Cut B}}
+Ser mejor o igual en \emph{todos} los ejes (calidad y los cuatro de coste) y estrictamente mejor en
+al menos uno. LoRA domina a los encoders: más F1 con 6--12\,M parámetros entrenables. Full-FT queda
+dominado salvo en latencia.
+\resp{\S IV-B; Tabla~IV; Fig.~2.}
+
+\Q{¿Por qué QLoRA es más lento si ocupa menos memoria? \nivelbadge{avanzado --- Cut B}}
+Porque los pesos viven cuantizados a 4 bits y hay que \emph{reconstruirlos al vuelo}
+(dequantización) en cada paso forward. Ahorra memoria a costa de tiempo: $\approx$2.4$\times$ en
+entrenamiento, $\approx$2$\times$ en latencia.
+\resp{\S III-C; Tabla~IV.}
+
+\Q{¿Cómo garantizas que la std de Cut~A mide varianza de datos y no de inicialización?
+\nivelbadge{avanzado --- Cut A}}
+Porque cada una de las tres semillas extrae un subconjunto \emph{independiente y disjunto} (0
+ejemplos compartidos en $n=4$ o $n=10$). Si compartieran ejemplos, la std mediría solo ruido de
+pesos; al ser disjuntos, mide cuánto depende el resultado de \emph{qué} datos tocaron.
+\resp{\S III-A; \S IV-A.}
+
+\Q{LoRA mejora más en neutral que los encoders (+0.06/+0.11). ¿Por qué? \nivelbadge{avanzado --- Cut B}}
+El dato duro: Qwen-LoRA cierra el hueco en neutral (0.613/0.631 vs 0.550 de BETO, 0.500 de XLM-R).
+La interpretación ---que el preentrenamiento más amplio de Qwen aporta señal extra para el
+``no-sentimiento''--- es una hipótesis razonada (marcada como ``suggests'' en el paper), no
+demostrada (debilidad W9).
+\resp{\S IV-B; Tabla~V.}
+
+\subsection*{B.4 Trampa}
+
+\Q{Tu mejora de 4--6 puntos sobre los encoders, ¿es estadísticamente significativa? \nivelbadge{trampa}}
+La diferencia (LoRA $0.698/0.707$ vs BETO $0.661$) es de 4--6 puntos, muy por encima de la varianza
+de semilla a datos completos ($\pm0.006$ en 1.7B; $\pm0.022$ en 4B). No reporto un $p$-valor formal,
+pero el efecto es grande frente al ruido medido. (Distinto de Cut~C, donde sí lo declaro como
+heurístico de magnitud --- W3.)
+\resp{Tabla~II (std full); Tabla~IV.}
+\seg{4--6 puntos frente a una varianza de $\pm0.006$: el efecto es grande comparado con el ruido
+medido, aunque no reporte un test formal.}
+
+\Q{¿0.707 no es un macro-F1 bajo para análisis de sentimiento? \nivelbadge{trampa}}
+Es tweet sentiment de \emph{tres clases balanceadas}, una tarea dura: hasta encoders fuertes se
+quedan en $\approx$0.66, con el techo en la clase neutral. Y macro-F1 no es comparable entre datasets
+ni número de clases. La contribución no es batir un récord absoluto de F1, sino el mapa
+\emph{calidad-coste} y el punto de cruce.
+\resp{Tabla~I; Tabla~V; \S III-D (no comparabilidad de macro-F1).}
+\puerta{No compares tu 0.707 con números de otros papers en otros datasets como si fueran la misma
+escala.}
+
+\Q{Si RoBERTuito ya da 0.758 de fábrica, ¿para qué sirve tu método? \nivelbadge{trampa}}
+RoBERTuito resuelve un caso: ``ya existe un modelo afinado en \emph{este} dominio''. Mi método
+responde a otro, más general y frecuente: ``tengo \emph{mi} dominio/variedad y poco presupuesto;
+¿cuánto dato necesito y a qué coste afino algo competitivo?''. Ahí es donde viven el punto de cruce y
+la frontera de Pareto. (Ver W1.)
+\resp{Tabla~I; \S I (contribuciones).}
+
+\Q{¿No estás sobreajustando los hiperparámetros al conjunto de validación? \nivelbadge{trampa}}
+No: los hiperparámetros LoRA están \emph{fijos} en todas las celdas ($r=16$, $\alpha=32$, etc.). Lo
+único que se selecciona con validación es \emph{cuál checkpoint} quedarse; el test se toca una vez al
+final.
+\resp{\S III-C; \S III-D.}
+
+\Q{El $n=4$ tiene una std de $\pm0.089$. ¿No invalida eso la curva de Cut~A? \nivelbadge{trampa}}
+Es esperable adaptar desde 1--2 ejemplos por clase, y se \emph{contrae} hacia $n=25$. Lejos de
+invalidar nada, es la razón de usar tres semillas disjuntas: la curva refleja honestamente que con
+poquísimos datos el resultado depende muchísimo de cuáles toquen.
+\resp{Tabla~II (n=4, 4B: $\pm0.089$); \S IV-A.}
+
+% ============================================================
+\section*{C. Preguntas que NO quieres que te hagan}
+% ============================================================
+\addcontentsline{toc}{section}{C. Preguntas que no quieres}
+
+\noindent Son las que más duelen si te pillan sin encuadre. Las cinco primeras ya tienen respuesta
+blindada en la sección~A; aquí van con la advertencia de \emph{por qué} incomodan y la regla de oro.
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{``RoBERTuito te gana (0.758 vs 0.707).''} (W1) --- Regla: \emph{out-of-domain, fuera
+        de Pareto}, automático. Nunca dejes que se quede en el aire que ``algo te gana''.
+  \item \textbf{``Corriste en H200, no en T4.''} (W4) --- Regla: reconduce \emph{siempre} a VRAM pico
+        como cifra del target T4; concede solo el tiempo de entrenamiento como limitación.
+  \item \textbf{``El 10.000$\times$ no cuadra con tus 110M/6.42M.''} (W14) --- Regla: el paper ya no
+        lo afirma como propio; 10.000$\times$ es de Hu et al.\ (GPT-3), y las mías (Tabla~IV) son
+        17--43$\times$ (1.7B), 9--24$\times$ (4B) y 268$\times$ vs full-FT.
+  \item \textbf{``¿Los $\sigma$ son significancia?''} (W3) --- Regla: ``no, y lo digo en el paper;
+        es magnitud relativa al ruido, y replica en dos modelos''.
+  \item \textbf{``Evaluar en dev infla Cut~C.''} (W2) --- Regla: 404 del test; dev nunca tocó train
+        ni selección; solo no comparable con test ajeno.
+  \item \textbf{``¿Generaliza fuera de Twitter / de Cardiff~ES?''} (W6) --- Honesto: no testado;
+        limitación declarada (\S V); el diseño prioriza profundidad y control sobre amplitud.
+  \item \textbf{``¿Por qué no DoRA/IA$^3$, que podrían ser mejores?''} --- Honesto: fuera de alcance,
+        \emph{future work} explícito (\S VI). No los descalifiques; reconoce que podrían mejorar la
+        frontera.
+\end{enumerate}
+
+\vfill
+\noindent\rule{\linewidth}{0.4pt}\\
+{\footnotesize \textbf{Nota de fidelidad.} Todas las cifras provienen de \texttt{paper/main.tex}
+(Tablas I--V y \S\,III--VI). Conocimiento externo marcado \externo{\ldots}. Debilidades según
+\texttt{defense/00\_inventario.md} (W1--W14); no se han añadido debilidades nuevas.}
+
+\end{document}

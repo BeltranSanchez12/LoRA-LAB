@@ -1,0 +1,33 @@
+experiment:
+  name: "example"
+  seed: 42
+  task: "sentiment_3class"
+
+data:
+  dataset: "cardiffnlp/tweet_sentiment_multilingual"
+  language: "es"
+  train_fraction: 1.0  # cut A fractions: 0.05, 0.1, 0.25, 0.5, 1.0
+  max_length: 128
+
+model:
+  base_model: "TBD"  # to be fixed after research-scout approval
+  method: "lora"  # lora | qlora | full_ft | prompting
+
+peft:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "v_proj"]
+
+training:
+  epochs: 3
+  batch_size: 16
+  learning_rate: 2e-4
+  warmup_ratio: 0.1
+
+evaluation:
+  metrics: ["f1_macro", "accuracy", "f1_per_class"]
+  cost_metrics: ["trainable_params", "peak_vram_gb", "train_time_s", "inference_latency_ms"]
+
+output:
+  results_dir: "results/"

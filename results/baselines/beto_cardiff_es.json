@@ -1,0 +1,20 @@
+{
+  "experiment_name": "encoder_finetuned_dccuchile_bert-base-spanish-wwm-cased_cardiff_es",
+  "model_name": "dccuchile/bert-base-spanish-wwm-cased",
+  "method": "encoder_finetuned",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.6612994350282486,
+  "accuracy": 0.6632183908045977,
+  "f1_per_class": {
+    "negative": 0.7016949152542373,
+    "neutral": 0.55,
+    "positive": 0.7322033898305085
+  },
+  "trainable_params": 109853187,
+  "peak_vram_gb": 2.470710784,
+  "train_time_s": 10.619552756892517,
+  "inference_latency_ms": 0.637400504094602,
+  "fallback_rate": null,
+  "notes": "Full fine-tuning de dccuchile/bert-base-spanish-wwm-cased sobre Cardiff ES (train completo). epochs=3, lr=2e-05, bs=16. Punto A de la frontera de Pareto calidad-coste."
+}

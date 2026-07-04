@@ -1,0 +1,20 @@
+{
+  "experiment_name": "qlora_qwen4b_nfull_s42",
+  "model_name": "Qwen/Qwen3-4B",
+  "method": "qlora",
+  "data_fraction": "full",
+  "seed": 42,
+  "f1_macro": 0.7012167616334283,
+  "accuracy": 0.6977011494252874,
+  "f1_per_class": {
+    "negative": 0.7465277777777778,
+    "neutral": 0.6089743589743589,
+    "positive": 0.7481481481481481
+  },
+  "trainable_params": 11796480,
+  "peak_vram_gb": 6.787254784,
+  "train_time_s": 533.8893,
+  "inference_latency_ms": 131.9478659955948,
+  "fallback_rate": 0.0,
+  "notes": "PEFT qlora sobre Qwen/Qwen3-4B, fracción=full, seed=42. r=16, lr=0.0002, max_steps=1150 (min_steps=80). best_val_F1=0.7161@step287. loss 0.4641876220703125->0.015314404557390911. n_train=1839, n_test=870."
+}

@@ -1,0 +1,759 @@
+% ============================================================
+%  DOCUMENTO DE ESTUDIO PARA LA DEFENSA
+%  Proyecto: Efficient Fine-Tuning of Small Open LLMs for
+%            Spanish Sentiment Analysis (LoRA/QLoRA)
+%  Autor del proyecto: Beltrán Sánchez Careaga
+%
+%  Material de estudio (NO es el paper). Por cada concepto:
+%  definición rigurosa primero, intuición/analogía como apoyo,
+%  procedimiento, caja de análisis (qué/porqué/alternativas/
+%  qué NO significa) y autotest. En los ítems difíciles, el
+%  autotest incluye una "derivación en blanco".
+%
+%  Estado: BLOQUE 1 COMPLETO (14 ítems).
+% ============================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}   % acentos y guiones correctos sin depender de spanish.ldf
+% Nota: se evita babel-spanish porque spanish.ldf no está instalado en este entorno
+% (solo el locale .ini). El contenido es español; la tipografía no lo requiere.
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!50!black, urlcolor=blue!50!black}
+
+% ---- Comandos de apoyo ----
+\newcommand{\nivel}[1]{\medskip\noindent\textbf{\textcolor{blue!45!black}{#1}}\par\nopagebreak\smallskip}
+\newcommand{\fuente}[1]{\nopagebreak\par\hfill{\footnotesize\textit{Fuente: #1}}\par}
+\newcommand{\externo}[1]{{\footnotesize\textcolor{red!55!black}{[externo: #1]}}}
+\newcommand{\notrace}[1]{{\footnotesize\textcolor{orange!75!black}{\textbf{[NO trazable a tabla/sección: #1]}}}}
+
+% Caja "qué / por qué / alternativas / interpretación"
+\newenvironment{analisis}{%
+  \medskip\par\noindent\rule{\linewidth}{0.4pt}\par\nopagebreak
+  \textbf{Análisis de la decisión / resultado}\par\nopagebreak\smallskip
+  \begin{description}[leftmargin=2.6cm,style=nextline,font=\bfseries]
+}{%
+  \end{description}\noindent\rule{\linewidth}{0.4pt}\par\medskip
+}
+
+\title{\textbf{Documento de estudio para la defensa}\\[2pt]
+\large Fine-Tuning eficiente (LoRA/QLoRA) de LLMs pequeños para análisis de sentimiento en español}
+\author{Material de preparación --- Bloque 1: conceptos densos}
+\date{}
+
+\begin{document}
+\maketitle
+
+% ============================================================
+\section*{Cómo usar este documento}
+% ============================================================
+Cada concepto se explica con la \textbf{definición rigurosa primero} y la \textbf{intuición /
+analogía como segundo apoyo}, seguidas del \textbf{procedimiento}. Después, una caja de
+\textbf{análisis} (qué se decidió/observó, por qué, qué se descartó y, obligatoriamente, qué
+significa y \emph{qué NO significa}) y un \textbf{autotest}. En los ítems difíciles el autotest
+termina con una \emph{derivación en blanco}: con solo las dimensiones de entrada, reconstruir la
+fórmula y la cuenta de parámetros de memoria.
+
+\medskip\noindent Convenciones de fidelidad a la fuente:
+\begin{itemize}[nosep]
+  \item Todo número está trazado a \texttt{paper/main.tex} (sección \S\ o Tabla I--V).
+  \item El conocimiento externo al paper va en rojo: \externo{ejemplo}.
+  \item Cualquier número \emph{no} trazable a una tabla/sección va marcado en naranja:
+        \notrace{ejemplo ilustrativo}.
+\end{itemize}
+
+% ============================================================
+\section{Cómo leer este proyecto desde cero}
+% ============================================================
+
+\nivel{El problema, en una frase}
+Hay millones de tuits en español con opiniones, y queremos que una máquina diga si cada uno es
+\emph{positivo}, \emph{negativo} o \emph{neutral}. El problema no es solo acertar: es acertar
+\emph{barato}.
+
+\nivel{Por qué era caro hasta ahora}
+Los modelos de lenguaje grandes (LLMs) son como un cerebro con miles de millones de \emph{pesos}
+(números que codifican lo que el modelo «sabe»). Adaptar ese cerebro a una tarea concreta, a la
+manera clásica, significa reescribir todos esos pesos (\emph{full fine-tuning}): hace falta una
+GPU cara y muchos datos etiquetados. Para un estudiante, un autónomo o una pyme, eso es
+prohibitivo.
+
+\nivel{La idea que lo cambia: PEFT (LoRA / QLoRA)}
+En vez de reescribir el cerebro entero, lo \textbf{congelamos} y le pegamos unas «notas adhesivas»
+diminutas que corrigen su comportamiento. Eso es \textbf{LoRA}: se entrenan solo unas matrices
+pequeñas, una fracción mínima del modelo. \textbf{QLoRA} va más lejos: además comprime el cerebro
+congelado a 4 bits para que ocupe mucha menos memoria de GPU. Resultado: se puede afinar un modelo
+decente en una GPU \emph{gratuita} (el objetivo del proyecto es una T4 de 16~GB).
+
+\nivel{El reparto de personajes}
+\begin{itemize}[nosep]
+  \item \textbf{Modelos a afinar}: Qwen3-1.7B y Qwen3-4B (LLMs generativos abiertos, pequeños).
+  \item \textbf{Rivales clásicos} (\emph{baselines}): BETO y XLM-RoBERTa (encoders de español,
+        afinados a la antigua), más un suelo léxico (TF-IDF) y una referencia de fábrica
+        (RoBERTuito).
+  \item \textbf{Datos}: tuits en español de Cardiff~NLP (cortes A y B); e InterTASS~2018, con
+        tuits de España, Costa Rica y Perú (corte~C).
+  \item \textbf{La regla de medir}: \emph{macro-F1}, una nota que pondera por igual las tres clases.
+\end{itemize}
+
+\nivel{Las tres preguntas (los tres «cortes») y sus respuestas en una línea}
+\begin{description}[leftmargin=1.6cm,style=nextline,font=\bfseries]
+  \item[Cut A] \emph{¿Cuántos ejemplos hacen falta para que afinar gane a solo «pedírselo» (prompting) al modelo?}
+        \\ Depende del tamaño: al 1.7B le bastan $<7$ ejemplos; el 4B necesita $\approx 50$, porque de partida ya lo hace mejor sin afinar.
+  \item[Cut B] \emph{¿Un modelo pequeño con LoRA gana a los encoders clásicos teniendo en cuenta el coste?}
+        \\ Sí. LoRA «domina la frontera»: más calidad (F1 0.707 / 0.698 vs 0.661 de BETO) entrenando una fracción de los parámetros.
+  \item[Cut C] \emph{Un adaptador entrenado en una variedad de español, ¿sirve para otras?}
+        \\ Casi siempre sí, pero con una asimetría: entrenar en costarricense o peruano y evaluar en español de España cuesta $0.031$--$0.039$ de F1.
+\end{description}
+
+\nivel{La moraleja}
+El proyecto no vende «un modelo mejor», sino \textbf{evidencia reproducible} sobre \emph{cuándo} y
+\emph{a qué coste} conviene cada opción, en hardware al alcance de cualquiera. Por eso muchos
+resultados que parecen «negativos» (una penalización aquí, QLoRA más lento allá) son en realidad la
+prueba de que el experimento estaba bien diseñado: midió lo que decía medir.
+
+\bigskip\hrule\bigskip
+
+% ============================================================
+\section{LoRA: adaptar un modelo gigante moviendo casi nada}\label{sec:lora}
+% ============================================================
+
+\nivel{Definición rigurosa}
+Sea $W_0 \in \mathbb{R}^{d \times k}$ una matriz de pesos preentrenada y \textbf{congelada}. LoRA
+reparametriza su actualización como un producto de \emph{rango bajo}:
+\[
+\Delta W = B A, \qquad B \in \mathbb{R}^{d \times r}, \quad A \in \mathbb{R}^{r \times k}, \quad r \ll \min(d,k).
+\]
+La capa, en lugar de $h = W_0 x$, calcula
+\[
+h = W_0 x + \frac{\alpha}{r}\, B A\, x .
+\]
+Solo $A$ y $B$ se entrenan; $W_0$ permanece fijo. El factor $\alpha/r$ escala la contribución del
+adaptador. En el proyecto: $r=16$, $\alpha=32$ (luego $\alpha/r=2$), \emph{dropout} $0{,}05$, sobre
+las proyecciones de atención \texttt{\{q,k,v,o\}\_proj}.
+\fuente{\S III-C «LoRA Configuration» de \texttt{paper/main.tex}}
+
+\nivel{La intuición (apoyo)}
+Un LLM es como una \textbf{enciclopedia enorme} ya impresa que no queremos reimprimir. LoRA la deja
+\textbf{congelada} y le añade una \textbf{hoja de erratas muy fina}: «donde pone esto, entiende esto
+otro». Esa hoja (las matrices $A,B$) es pequeñísima porque muchos ajustes útiles «caben» en pocas
+dimensiones; el número de dimensiones es el rango $r$ (aquí 16): más rango = corrección más
+detallada, pero más cara.
+
+\nivel{El procedimiento}
+\begin{enumerate}[nosep]
+  \item Eliges qué matrices corregir: aquí \texttt{\{q,k,v,o\}\_proj} (atención).
+  \item Congelas cada $W_0$ (no se entrena).
+  \item Añades $\Delta W = BA$ y entrenas \emph{solo} $A,B$.
+  \item Escalas por $\alpha/r$.
+  \item Al inferir, $\Delta W$ se puede \emph{fundir} en $W_0$: en teoría, sin coste extra.
+\end{enumerate}
+
+\noindent\textbf{Cuenta de parámetros (el corazón del ahorro).} Entrenar $W_0$ entera cuesta
+$d\cdot k$ parámetros; LoRA cuesta $r\,(d+k)$. Con $d=k=2048$ y $r=16$:
+\[
+\text{full} = 2048^2 \approx 4{,}19\text{M}, \qquad \text{LoRA} = 16\,(2048{+}2048) = 65\,536 \approx 0{,}066\text{M},
+\]
+es decir $\approx 64\times$ menos \emph{por matriz}.
+\notrace{el valor $d=k=2048$ es ilustrativo; el paper no publica la dimensión oculta de Qwen3}.
+Sumando todas las matrices adaptadas, el proyecto entrena \textbf{6,42~M} (1.7B) y \textbf{11,80~M}
+(4B) parámetros \emph{(Tabla~IV)} sobre modelos de $1{,}72$~B y $4$~B pesos totales.
+
+\medskip\noindent\textbf{Sobre el «$\sim\!10\,000\times$» (debilidad W14).} El factor $10\,000\times$
+es del paper original de LoRA \externo{Hu et al., 2021: $r{=}4$ sobre GPT-3 de 175\,B} y así se cita
+en \S II-A. En \emph{este} proyecto, comparando parámetros entrenables, lo real es:
+\[
+\frac{\text{BETO }110\text{M}}{6{,}42\text{M}} \approx 17\times,\quad
+\frac{\text{XLM-R }278\text{M}}{6{,}42\text{M}} \approx 43\times,\quad
+\frac{\text{full-FT }1{,}72\text{B}}{6{,}42\text{M}} \approx 268\times .
+\]
+El argumento de fondo (LoRA entrena una fracción minúscula) es verdadero; solo el número
+«$10\,000\times$» no aplica a esta comparación. \emph{(Verificado contra Tablas~I y~IV.)}
+
+\begin{analisis}
+  \item[Qué] Reparametrización de la actualización como producto de rango bajo $\Delta W=BA$,
+        entrenando solo $A,B$ y congelando $W_0$.
+  \item[Por qué] Adaptar modelos de miles de millones de pesos entrenando millones; cabe en GPU
+        gratuita y, al poder fundir $\Delta W$, en teoría no añade latencia.
+  \item[Alternativas descartadas] \emph{Full-FT} (mueve todo, $\approx 270\times$ más, casi doble
+        VRAM, y aquí no mejora calidad); \emph{adapters clásicos} \externo{Houlsby et al., 2019}
+        (añaden latencia); \emph{DoRA/IA$^3$} (\emph{future work}, no evaluados).
+  \item[Qué significa] Con $r=16$ sobre la atención basta para superar a encoders full-fine-tuned
+        en esta tarea.
+  \item[Qué NO significa] No que LoRA iguale a full-FT en \emph{cualquier} tarea; no
+        «$10\,000\times$» en este setup (W14); y el «sin latencia» es cierto \emph{solo si} se funde
+        el adaptador (la Tabla~IV mide 54 vs 33~ms porque se evaluó sin fundir).
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Para qué sirve el factor $\alpha/r$ al variar $r$?
+  \item ¿Por qué la teoría dice «0 latencia» pero la Tabla~IV mide 54~ms (LoRA) vs 33~ms (full-FT)?
+  \item ¿De dónde sale el «$10\,000\times$» y por qué no aplica a tu Cut~B? Da las cifras correctas.
+  \item \textbf{Derivación en blanco.} Dados $d=k=2048$ y $r=16$: escribe $\Delta W$ con las
+        dimensiones de $A$ y $B$, deriva el número de parámetros entrenables por matriz con LoRA y
+        con full-FT, y el cociente. (Solución: $BA$ con $B\in\mathbb{R}^{2048\times16}$,
+        $A\in\mathbb{R}^{16\times2048}$; LoRA $=16(2048{+}2048)=65\,536$; full $=2048^2=4\,194\,304$;
+        $\approx 64\times$.)
+\end{enumerate}
+
+% ============================================================
+\section{QLoRA: la misma idea, pero el cerebro comprimido a 4 bits}\label{sec:qlora}
+% ============================================================
+
+\nivel{Definición rigurosa}
+QLoRA carga el modelo base en \textbf{4 bits} con la \texttt{BitsAndBytesConfig} del proyecto: tipo
+de cuantización \texttt{nf4} (\emph{NormalFloat-4}), doble cuantización activada
+(\texttt{use\_double\_quant=True}) y \texttt{compute\_dtype = bfloat16}. Tras cargar, se aplica
+\texttt{prepare\_model\_for\_kbit\_training} y se activa \emph{gradient checkpointing}; sobre ese
+backbone cuantizado se monta la \emph{misma} configuración LoRA ($r=16$, $\alpha=32$, etc.).
+\fuente{\S III-C «QLoRA Configuration», \texttt{src/models/lora\_finetune.py}}
+
+\nivel{La intuición (apoyo)}
+Si LoRA congela la enciclopedia, QLoRA además la \textbf{imprime en papel finísimo}: cada peso, que
+ocupaba 16 bits, se guarda con solo 4 bits (16 niveles posibles en vez de miles). El cerebro pesa
+mucho menos en memoria; el coste es que, para «leerlo», hay que reconstruir cada peso al vuelo
+(\emph{dequantización}), lo que cuesta tiempo. NF4 es un formato de 4 bits cuyos niveles se reparten
+suponiendo que los pesos siguen una campana de Gauss \externo{Dettmers et al., 2023}, de modo que se
+pierde menos información que con 4 bits «planos».
+
+\nivel{Resultados clave en el proyecto (Tabla~IV)}
+\begin{itemize}[nosep]
+  \item \textbf{Memoria}: VRAM pico baja a \textbf{4,93~GB} (1.7B) y \textbf{6,79~GB} (4B), frente a
+        $8{,}72$ y $16{,}7$~GB de LoRA: reducción de $\mathbf{1{,}8\times}$ y $\mathbf{2{,}5\times}$.
+        El 4B entra así en GPUs de consumo de 8~GB.
+  \item \textbf{Calidad}: retiene $0{,}681/0{,}698 = \mathbf{97{,}6\%}$ (1.7B) y
+        $0{,}701/0{,}707 = \mathbf{99{,}2\%}$ (4B) de la F1 de LoRA.
+  \item \textbf{Coste}: entrena $\approx\mathbf{2{,}4\times}$ más lento (409 vs 169~s; 534 vs 218~s)
+        y la latencia de inferencia $\approx\mathbf{2\times}$ (102 vs 54~ms; 132 vs 68~ms), por la
+        dequantización al vuelo.
+\end{itemize}
+
+\begin{analisis}
+  \item[Qué] Cuantización NF4 a 4 bits del backbone congelado + doble cuantización, con LoRA encima.
+  \item[Por qué] Reducir la VRAM pico para meter el 4B en hardware de consumo (8~GB), el objetivo
+        «free-tier» del proyecto.
+  \item[Alternativas descartadas] LoRA sin cuantizar (el 4B no baja de 16~GB); cuantización de 8
+        bits (menos ahorro); 4 bits «planos» en vez de NF4 (peor preservación de la información).
+  \item[Qué significa] A esta escala, cuantizar a 4 bits cuesta \emph{casi nada} en calidad
+        (1--2,5 puntos de F1) y mucho en VRAM. La elección LoRA-vs-QLoRA debe gobernarse por el eje
+        de coste (VRAM/latencia), no por la calidad esperada.
+  \item[Qué NO significa] No que QLoRA sea «gratis»: paga $2{,}4\times$ en entrenamiento y $2\times$
+        en latencia. Para inferencia de baja latencia ($<100$~ms), LoRA sin cuantizar es mejor si la
+        VRAM lo permite.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Por qué QLoRA es más \emph{lento} aunque ocupe menos memoria?
+  \item ¿Qué aporta NF4 frente a 4 bits «planos»?
+  \item Para el 4B, ¿cuál es la retención de F1 y la reducción de VRAM? ¿Qué implica para elegir
+        entre LoRA y QLoRA?
+  \item \textbf{Derivación en blanco.} A partir de las cifras de la Tabla~IV, calcula el factor de
+        reducción de VRAM de QLoRA vs LoRA para 1.7B y 4B, y el porcentaje de F1 retenido en cada
+        caso. (Solución: $8{,}72/4{,}93\approx1{,}8\times$ y $16{,}7/6{,}79\approx2{,}5\times$;
+        $97{,}6\%$ y $99{,}2\%$.)
+\end{enumerate}
+
+% ============================================================
+\section{Macro-F1: la regla con la que se mide todo}\label{sec:macrof1}
+% ============================================================
+
+\nivel{Definición rigurosa}
+Para una clase $c$, con $TP_c,FP_c,FN_c$ (verdaderos positivos, falsos positivos, falsos negativos):
+\[
+P_c = \frac{TP_c}{TP_c + FP_c}, \quad
+R_c = \frac{TP_c}{TP_c + FN_c}, \quad
+F1_c = \frac{2\,P_c\,R_c}{P_c + R_c}\ \text{(media armónica)}.
+\]
+El \textbf{macro-F1} promedia sin pesos sobre las $C=3$ clases:
+\[
+\text{macro-}F1 = \frac{1}{C}\sum_{c=1}^{C} F1_c = \frac{F1_{\text{neg}}+F1_{\text{neu}}+F1_{\text{pos}}}{3}.
+\]
+\fuente{\S III-D y \S IV de \texttt{paper/main.tex}}
+
+\nivel{La intuición (apoyo)}
+Es un examen con \textbf{tres temas de igual peso}: tu nota es la \emph{media de las tres notas},
+no el total de aciertos. Si fuera el total, podrías aprobar dominando los dos temas fáciles e
+ignorando el difícil. Aquí el tema difícil es \textbf{neutral} (detectar que un tuit \emph{no}
+expresa emoción). \emph{Accuracy} es «total de aciertos» y puede salir alta ignorando neutral;
+macro-F1 obliga a no abandonarlo. La media armónica es alta solo si \emph{precisión y recall} lo
+son: si $P=0{,}9$ y $R=0{,}1$, $F1 = 2\cdot\frac{0{,}9\cdot0{,}1}{1{,}0}=0{,}18$ (no $0{,}5$).
+
+\nivel{Anclaje en los datos}
+En la Tabla~V, XLM-RoBERTa logra $F1_{\text{neu}}=0{,}500$ (el paper lo llama «equivalente a
+asignación aleatoria»), BETO $0{,}550$, mientras pos/neg rondan $0{,}70$--$0{,}74$. LoRA cierra ese
+hueco ($0{,}613$ el 4B, $0{,}631$ el 1.7B). Como macro-F1 da igual peso a la clase difícil, premia
+ese cierre: por eso LoRA «gana» en macro-F1 aunque empate en las clases fáciles.
+
+\begin{analisis}
+  \item[Qué] Media no ponderada de la F1 de las tres clases; métrica primaria del estudio.
+  \item[Por qué] El test está balanceado (290/clase) pero la \emph{dificultad} no; macro-F1 trata
+        las clases por igual y refleja el rendimiento en la clase difícil.
+  \item[Alternativas descartadas] \emph{Accuracy/micro-F1} (se dejan dominar por el agregado y
+        ocultan el fallo en neutral); \emph{weighted-F1} (pondera por frecuencia; con clases
+        balanceadas apenas cambia y no penaliza la clase difícil).
+  \item[Qué significa] Macro-F1 alto = rendimiento \emph{equilibrado} en las tres clases.
+  \item[Qué NO significa] No mide calibración; no distingue \emph{tipos} de error
+        (pos$\leftrightarrow$neu vs pos$\leftrightarrow$neg); y \textbf{no es comparable entre
+        datasets con distinto número de clases}.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item Define con tus palabras precisión y recall para la clase neutral.
+  \item ¿Por qué F1 usa media armónica y no aritmética? Da un ejemplo numérico.
+  \item Un modelo que predice \emph{siempre} «positivo» en test balanceado de 3 clases: ¿qué
+        accuracy y qué macro-F1 aproximado tiene? (Pista: acc~$=1/3$; solo pos con recall~1 y
+        precisión~$\approx1/3 \Rightarrow F1_{\text{pos}}\approx0{,}5$, las otras $0 \Rightarrow$
+        macro~$\approx0{,}17$.)
+  \item ¿Por qué el paper la llama «la cifra más informativa»? Relaciónalo con la Tabla~V.
+\end{enumerate}
+
+% ============================================================
+\section{El objetivo SFT: solo la etiqueta cuenta}\label{sec:sft}
+% ============================================================
+
+\nivel{Definición rigurosa}
+El \emph{fine-tuning} es supervisado (SFT) con \emph{cross-entropy}, pero \textbf{enmascarando el
+prompt}: a todos los tokens del prompt se les asigna la etiqueta $-100$ (valor que la función de
+pérdida ignora), de modo que solo el \textbf{token de etiqueta} (una de \emph{negative},
+\emph{neutral}, \emph{positive}) y el token \texttt{EOS} contribuyen a la pérdida. Formalmente, si
+$\mathcal{M}$ es el conjunto de posiciones no enmascaradas,
+\[
+\mathcal{L} = -\!\!\sum_{t \in \mathcal{M}} \log p_\theta\big(y_t \mid y_{<t}\big),
+\qquad \mathcal{M} = \{\text{token de etiqueta},\ \texttt{EOS}\}.
+\]
+La estructura del prompt (system prompt, chat template, \emph{thinking mode} off) es \emph{idéntica}
+a la del baseline de prompting.
+\fuente{\S III-C «Model Selection and SFT Objective»; \texttt{configs/prompting\_protocol.yaml}}
+
+\nivel{La intuición (apoyo)}
+No queremos enseñar al modelo a \emph{recitar la pregunta}, solo a \emph{dar la respuesta correcta}.
+Por eso «tapamos» (máscara $-100$) todo el enunciado y solo puntuamos la palabra final
+(la etiqueta). Es como un examen donde solo corrigen la casilla de la respuesta, no si copiaste bien
+el enunciado.
+
+\nivel{Por qué importa este detalle}
+Como el prompt es idéntico entre prompting y fine-tuning, y solo la etiqueta entra en la pérdida,
+\textbf{la única variable que cambia entre «pedírselo» y «afinarlo» son los pesos actualizados}. Eso
+es lo que hace \emph{limpio} el experimento de Cut~A: el cruce prompting$\to$fine-tuning no se puede
+atribuir a diferencias de protocolo.
+
+\begin{analisis}
+  \item[Qué] Cross-entropy con enmascarado del prompt ($-100$); solo etiqueta + \texttt{EOS}
+        contribuyen.
+  \item[Por qué] Aislar la variable «pesos» entre prompting y fine-tuning, y centrar el aprendizaje
+        en producir la etiqueta correcta.
+  \item[Alternativas descartadas] Pérdida sobre \emph{todos} los tokens (mezclaría aprender la tarea
+        con memorizar el prompt) o cabezal de clasificación dedicado (rompería la equivalencia con
+        el harness generativo del baseline).
+  \item[Qué significa] Prompting y fine-tuning comparten todo salvo los pesos; el experimento de
+        cruce es justo.
+  \item[Qué NO significa] No que el modelo aprenda «formato» (eso ya lo da el prompt); no que se
+        entrene un clasificador clásico: sigue siendo generación, solo que supervisada en el token
+        de etiqueta.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Qué representa el valor $-100$ y sobre qué tokens se aplica?
+  \item ¿Por qué es importante que el prompt sea idéntico al del baseline de prompting?
+  \item \textbf{Derivación en blanco.} Escribe la forma de $\mathcal{L}$ indicando explícitamente
+        qué posiciones componen $\mathcal{M}$ y por qué el resto no suma a la pérdida.
+\end{enumerate}
+
+% ============================================================
+\section{Caracterización en sigmas: magnitud, no significancia}\label{sec:sigma}
+% ============================================================
+
+\nivel{Definición rigurosa}
+En Cut~C, cada celda (variedad origen $\to$ variedad destino) se evalúa con 3 semillas
+$\{42,43,44\}$; se reporta media $\pm$ desviación típica (std) entre semillas. Un «gap» $\Delta$
+entre dos celdas se expresa en \textbf{unidades de std de semilla}:
+\[
+\text{gap en } \sigma = \frac{|\Delta|}{\sigma_{\text{semilla}}}.
+\]
+Ejemplo (Qwen3-1.7B, CR$\to$ES): ES en-dominio $0{,}644\pm0{,}007$, CR$\to$ES $0{,}613\pm0{,}007$,
+luego $\Delta=-0{,}031$, y $0{,}031/0{,}007\approx 4{,}4\sigma$.
+\notrace{el paper reporta $4{,}6\sigma$ para esta celda; recalculando con la $\sigma$ redondeada de
+la tabla sale $\approx4{,}4\sigma$ (diferencia por redondeo de $\sigma$ antes de dividir)}.
+\fuente{\S IV-C de \texttt{paper/main.tex}; Tabla~III (\texttt{tab:cutC})}
+
+\nivel{La intuición (apoyo)}
+«$4{,}6\sigma$» suena a estadística, pero aquí significa solo: \emph{la caída es 4,6 veces el ruido
+que hay entre semillas}. Es una forma de decir «esto es grande comparado con lo que varía al cambiar
+la semilla aleatoria», no «esto es significativo» en el sentido de un test de hipótesis.
+
+\nivel{El resultado y su honestidad}
+La penalización al evaluar en ES (entrenando en CR/PE) es $0{,}031$--$0{,}039$ de F1
+($2{,}6$--$4{,}6\sigma$), y \textbf{replica en 1.7B y 4B}. El paper avisa explícitamente: no hay test
+de hipótesis (permutación, $t$ de Student), ni corrección por comparaciones múltiples sobre la
+matriz $3\times3\times2$; el criterio de $2\sigma$ es un \emph{heurístico de magnitud}, no un
+$p$-valor.
+
+\begin{analisis}
+  \item[Qué] Expresar los gaps de transferencia en múltiplos de la std entre semillas.
+  \item[Por qué] Con corpus pequeños (539--738 ejemplos) y 3 semillas, da una medida \emph{honesta}
+        de magnitud relativa al ruido, sin sobrevender significancia estadística.
+  \item[Alternativas descartadas] Test formal con corrección de comparaciones múltiples (queda como
+        \emph{future work}; con 3 semillas tendría poca potencia); reportar solo $\Delta$ sin
+        contexto de ruido (no diría si es grande o pequeño).
+  \item[Qué significa] La asimetría hacia ES es \emph{grande respecto al ruido} y \emph{reproducible}
+        en ambos tamaños de modelo.
+  \item[Qué NO significa] No es significancia estadística ($p$-valor); no prueba causalidad
+        dialectal; con más semillas/datos podría matizarse. La excepción CR$\to$PE (3,9$\sigma$ en
+        1.7B) \emph{no} replica en 4B (0,3$\sigma$): solo la columna ES es robusta.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Qué afirma y qué \emph{no} afirma un «gap de $4{,}6\sigma$» aquí?
+  \item ¿Por qué el paper no aplica un test de hipótesis formal? ¿Qué tendría que cambiar para
+        hacerlo?
+  \item \textbf{Derivación en blanco.} Dados ES en-dominio $0{,}644\pm0{,}007$ y PE$\to$ES
+        $0{,}613\pm0{,}008$, calcula $\Delta$ y el gap en $\sigma$. (Solución: $\Delta=-0{,}031$;
+        $0{,}031/0{,}008\approx 3{,}9\sigma$, coherente con el $3{,}8\sigma$ del paper.)
+\end{enumerate}
+
+% ============================================================
+\section{El punto de cruce y su mecanismo}\label{sec:crossover}
+% ============================================================
+
+\nivel{Definición rigurosa}
+El \textbf{punto de cruce} es el menor $n$ (tamaño del set de entrenamiento) para el que LoRA supera
+el \emph{mejor} resultado de prompting del \emph{mismo} modelo (N-independiente). De la Tabla~II:
+\begin{itemize}[nosep]
+  \item Qwen3-1.7B: mejor prompting $0{,}560$ ($k{=}8$). LoRA está por debajo en $n{=}4$
+        ($0{,}539\pm0{,}010$) y \textbf{lo supera en $n{=}7$} ($0{,}590\pm0{,}063$).
+  \item Qwen3-4B: 0-shot ya $0{,}633$; mejor prompting $0{,}652$ ($k{=}4$). En $n{=}7$ ($0{,}645\pm0{,}038$)
+        y $n{=}25$ ($0{,}645\pm0{,}037$) sigue por debajo; \textbf{cruza hacia $n\approx50$}
+        ($0{,}666\pm0{,}034$).
+\end{itemize}
+\fuente{\S IV-A y Tabla~II (\texttt{tab:cutA}); mecanismo en \S II-C y \S V}
+
+\nivel{La intuición (apoyo) y el mecanismo}
+«Pedírselo» (prompting) tiene un \textbf{suelo de calidad} que depende de lo que el modelo ya sabe
+de fábrica. Las demostraciones del prompt sobre todo comunican \emph{formato} y \emph{espacio de
+etiquetas}, no enseñan el mapeo correcto \externo{Min et al., 2022}. Por eso un modelo más grande
+(4B) parte de un suelo más alto ($0{,}652$ vs $0{,}560$) y el fine-tuning necesita \emph{más señal}
+(más ejemplos) para superarlo. De ahí que el cruce se desplace a la derecha con el tamaño: no hay un
+umbral universal.
+
+\begin{analisis}
+  \item[Qué] El cruce prompting$\to$fine-tuning depende del tamaño: $<7$ ejemplos (1.7B) vs
+        $\approx50$ (4B).
+  \item[Por qué] Suelo de prompting $\propto$ conocimiento preentrenado; suelo alto $\Rightarrow$
+        más datos para superarlo.
+  \item[Alternativas descartadas] Buscar un umbral único universal (no existe; varía con el suelo
+        del modelo, y probablemente con tarea/dominio).
+  \item[Qué significa] Regla práctica: con muy pocos labels ($n<10$) y modelo pequeño, afina ya; con
+        4B, comprueba primero si el suelo de prompting te basta, porque afinar solo gana fiable hacia
+        $n\approx50$.
+  \item[Qué NO significa] Los números ($n{<}7$, $n{\approx}50$) \emph{no} son constantes
+        universales; lo reproducible es la \emph{existencia} del desplazamiento con el tamaño.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Por qué un modelo más grande \emph{retrasa} el punto de cruce?
+  \item ¿Qué papel juegan las demostraciones del prompt según Min et al.?
+  \item ¿Qué parte de este hallazgo es universal y qué parte depende del modelo?
+\end{enumerate}
+
+% ============================================================
+\section{Muestreo estratificado y disjunto por semilla}\label{sec:subsampling}
+% ============================================================
+
+\nivel{Definición rigurosa}
+Para Cut~A se construyen subconjuntos de tamaño $n\in\{4,7,10,16,25,50,100,250,500,1000\}$ más el
+total ($1839$). Cada semilla $\{42,43,44\}$ extrae un subconjunto \textbf{estratificado}
+(las 3 clases presentes en cada celda; en $n{=}4$: neg$=2$, neu$=1$, pos$=1$) e
+\textbf{independiente/disjunto} de los de las otras semillas (0 ejemplos compartidos en $n{=}4$, 0 en
+$n{=}10$).
+\fuente{\S III-A; \S IV-A; \texttt{scripts/build\_fraction\_subsets.py}}
+
+\nivel{La intuición (apoyo)}
+Queremos que la barra de error (la std) signifique algo real. Si las tres semillas vieran \emph{los
+mismos} ejemplos y solo cambiara la inicialización, la std mediría «ruido de pesos». Al hacer que
+cada semilla vea ejemplos \emph{distintos}, la std mide algo más informativo: \textbf{cuánto depende
+el resultado de \emph{qué} datos te tocaron} (varianza de muestreo de datos). La estratificación
+evita que, por azar, una celda diminuta se quede sin alguna clase.
+
+\begin{analisis}
+  \item[Qué] Submuestras estratificadas e independientes por semilla.
+  \item[Por qué] Que la std refleje varianza de \emph{muestreo de datos}, no solo de inicialización;
+        garantizar las 3 clases en celdas diminutas.
+  \item[Alternativas descartadas] Submuestras solapadas / fijas entre semillas (la std subestimaría
+        la incertidumbre real); muestreo no estratificado (riesgo de clases ausentes en $n$ pequeños).
+  \item[Qué significa] Las barras de error de Cut~A son honestas respecto a la sensibilidad a los
+        datos.
+  \item[Qué NO significa] No elimina toda incertidumbre: con $n{=}4$ la varianza es enorme
+        ($\pm0{,}089$ en 4B) precisamente porque depende muchísimo de qué 4 ejemplos tocaron.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Qué mide la std en Cut~A gracias a que las submuestras son disjuntas?
+  \item ¿Por qué se estratifica en lugar de muestrear al azar puro?
+  \item ¿Por qué la varianza es máxima en $n{=}4$ y se contrae al crecer $n$?
+\end{enumerate}
+
+% ============================================================
+\section{Frontera de Pareto y dominación}\label{sec:pareto}
+% ============================================================
+
+\nivel{Definición rigurosa}
+Un método \textbf{domina} a otro si es mejor o igual en \emph{todos} los ejes y estrictamente mejor
+en al menos uno. La \textbf{frontera de Pareto} es el conjunto de métodos no dominados. En Cut~B los
+ejes son calidad (macro-F1) y coste (parámetros entrenables, VRAM, tiempo, latencia). LoRA domina a
+los encoders: más F1 ($0{,}707/0{,}698$ vs $0{,}661/0{,}646$) con $6$--$12$~M parámetros entrenables.
+\fuente{\S IV-B; Tabla~IV (\texttt{tab:cutB}); Fig.~2}
+
+\nivel{La intuición (apoyo)}
+Imagina comprar coche por precio y consumo: un coche está «en la frontera» si no hay otro más barato
+\emph{y} que gaste menos a la vez. Los que sí tienen a alguien mejor en todo quedan «dominados».
+
+\begin{analisis}
+  \item[Qué] LoRA ocupa la frontera calidad-coste; full-FT y encoders quedan dominados (salvo full-FT
+        en latencia).
+  \item[Por qué] Mejor calidad a una fracción del coste de parámetros/VRAM.
+  \item[Alternativas descartadas] Mirar solo calidad (ocultaría el coste) o solo coste (ocultaría la
+        calidad): la gracia es el \emph{trade-off} conjunto.
+  \item[Qué significa] Para presupuesto limitado, no hay escenario donde full-FT de un encoder gane a
+        LoRA en los ejes medidos.
+  \item[Qué NO significa] \textbf{No} que LoRA tenga la mayor F1 absoluta del paper: RoBERTuito saca
+        $0{,}758$, pero está \emph{fuera} de la frontera por ser out-of-domain (TASS~2020, zero-shot)
+        y no comparable de forma controlada (esto es la debilidad W1).
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item Define «dominar» con tus palabras y di por qué full-FT queda dominado salvo en latencia.
+  \item ¿Por qué RoBERTuito (F1 $0{,}758$) no está en la frontera pese a tener la F1 más alta?
+\end{enumerate}
+
+% ============================================================
+\section{Los cuatro ejes de coste}\label{sec:costaxes}
+% ============================================================
+
+\nivel{Definición rigurosa}
+Por cada celda experimental se miden cuatro costes: (1)~\textbf{parámetros entrenables} (los que se
+actualizan, no los totales); (2)~\textbf{VRAM pico} en GB, vía
+\texttt{torch.cuda.max\_memory\_allocated()}; (3)~\textbf{tiempo de entrenamiento} (wall-clock, s);
+(4)~\textbf{latencia} de inferencia (ms/ejemplo, promediada sobre el test).
+\fuente{\S III-D; Tabla~IV}
+
+\nivel{La intuición (apoyo)}
+«Calidad» a secas engaña: un modelo carísimo que acierta un poco más no siempre compensa. Estos
+cuatro ejes responden a preguntas reales de despliegue: ¿qué guardo y reentreno por tarea? (params)
+¿me cabe en la GPU? (VRAM) ¿cuánto tardo en entrenar? (tiempo) ¿responde rápido? (latencia).
+
+\begin{analisis}
+  \item[Qué] Cuatro dimensiones de coste medidas por celda junto a la calidad.
+  \item[Por qué] Hacer comparables modelos generativos y encoders en \emph{coste}, no solo en F1;
+        validar viabilidad en T4 16~GB (la VRAM pico es la cota clave).
+  \item[Alternativas descartadas] Reportar calidad aislada del coste (lo que hacía la literatura
+        previa, según \S II); usar parámetros \emph{totales} en vez de entrenables (no refleja el
+        coste real de PEFT por tarea).
+  \item[Qué significa] La distinción entrenables vs totales es la que justifica el ahorro de PEFT
+        (6--12~M frente a backbones de miles de millones).
+  \item[Qué NO significa] La VRAM se midió en H200, pero es una \emph{cota superior} válida para T4;
+        los \emph{tiempos} sí cambiarían en T4 (ver debilidad W4).
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Por qué se miden parámetros \emph{entrenables} y no totales?
+  \item ¿Cuál de los cuatro ejes es el realmente relevante para la afirmación «free-tier / T4» y por
+        qué?
+\end{enumerate}
+
+% ============================================================
+\section{El suelo de pasos y el calendario de entrenamiento}\label{sec:maxsteps}
+% ============================================================
+
+\nivel{Definición rigurosa}
+Para que las fracciones diminutas no queden infraentrenadas, el número de pasos de optimización se
+acota por abajo:
+\[
+\text{max\_steps} = \max\!\left(80,\ 5\cdot\Big\lceil \tfrac{n}{8} \Big\rceil\right).
+\]
+Calendario común a LoRA/QLoRA: lr~$=2\times10^{-4}$, scheduler \emph{cosine} con warmup ratio
+$0{,}1$, 5 épocas, batch 8, grad.\ accum.\ 1, longitud máxima 256, bf16. La val macro-F1 se evalúa 4
+veces durante el entrenamiento.
+\fuente{\S III-C «Training Schedule»; \texttt{configs/sprint3/grid/lora\_qwen1.7b\_n100\_s42.yaml}}
+
+\nivel{La intuición (apoyo)}
+Con muy pocos ejemplos, «5 épocas» son poquísimos pasos: el modelo apenas se entera. El suelo de
+80 pasos garantiza un mínimo de práctica aunque solo haya 4 ejemplos. Por encima de cierto $n$, manda
+la fórmula $5\lceil n/8\rceil$ (las 5 épocas reales).
+
+\begin{analisis}
+  \item[Qué] Suelo de 80 pasos; resto del calendario fijo.
+  \item[Por qué] Evitar que $n{=}4,7,10$ queden infraentrenados y contaminen la curva de Cut~A.
+  \item[Alternativas descartadas] Fijar «5 épocas» sin suelo (las celdas diminutas casi no se
+        entrenarían) o un nº de pasos fijo igual para todo $n$ (sobreentrenaría los $n$ grandes).
+  \item[Qué significa] La curva F1-vs-$n$ es comparable entre tamaños porque ninguna celda está
+        infraentrenada por accidente.
+  \item[Qué NO significa] No que 80 pasos basten para \emph{aprender} con 4 ejemplos: la enorme
+        varianza en $n{=}4$ muestra que el límite es el dato, no los pasos.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Qué problema evita el suelo de 80 pasos?
+  \item \textbf{Derivación en blanco.} Calcula max\_steps para $n{=}4$ y para $n{=}1000$.
+        (Solución: $n{=}4$: $\max(80,5\lceil4/8\rceil)=\max(80,5)=80$; $n{=}1000$:
+        $\max(80,5\lceil1000/8\rceil)=\max(80,5\cdot125)=625$.)
+\end{enumerate}
+
+% ============================================================
+\section{Selección del mejor checkpoint (val macro-F1)}\label{sec:checkpoint}
+% ============================================================
+
+\nivel{Definición rigurosa}
+No se usa el \emph{último} paso: se selecciona el checkpoint con la \textbf{mayor macro-F1 de
+validación} (implementado en \texttt{BestValF1Callback}). La validación se evalúa 4 veces durante el
+entrenamiento; la selección de hiperparámetros usa exclusivamente el split de validación (324
+ejemplos); el test (870) se toca una sola vez, al final.
+\fuente{\S III-C «Model Selection»; \S III-D}
+
+\nivel{La intuición (apoyo)}
+Entrenar de más puede empeorar (overfitting). En vez de quedarte con «la última foto», te quedas con
+«la mejor foto» según un examen de práctica (validación) que no es el examen final (test). Así no
+contaminas el test ni te quedas con un modelo pasado de cocción.
+
+\begin{analisis}
+  \item[Qué] Elegir el checkpoint de mejor val-F1, no el final.
+  \item[Por qué] Evitar overfitting tardío y respetar la separación validación/test (sin fuga).
+  \item[Alternativas descartadas] Usar el último paso (riesgo de overfitting); seleccionar sobre el
+        test (fuga de datos, invalidaría la comparación).
+  \item[Qué significa] Las cifras de test son honestas: el test se usó una sola vez.
+  \item[Qué NO significa] No garantiza el óptimo global; solo el mejor de las 4 evaluaciones de
+        validación realizadas.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Por qué no quedarse con el último checkpoint?
+  \item ¿Por qué seleccionar sobre validación y no sobre test?
+\end{enumerate}
+
+% ============================================================
+\section{Desbalance de clases y el descarte de NONE (Cut C)}\label{sec:none}
+% ============================================================
+
+\nivel{Definición rigurosa}
+InterTASS~2018 anota 4 polaridades (P, N, NEU, NONE). Se mapean P$\to$positivo, N$\to$negativo,
+NEU$\to$neutral, y se \textbf{descarta NONE} («sin opinión / sin objetivo»). Tras el descarte: 738~ES
+/ 539~CR / 541~PE de entrenamiento; hold-out estratificado del 15\% (131/96/96) para selección;
+evaluación en los dev splits (444/242/262). La clase neutral es más frecuente en PE ($\approx26\%$)
+que en ES/CR ($\approx15\%$).
+\fuente{\S III-A; \S IV-C}
+
+\nivel{La intuición (apoyo)}
+NONE no es «neutral»: neutral es «tiene postura, pero ni positiva ni negativa»; NONE es «no hay
+objetivo del que opinar». Mezclarlos sería meter peras en el cajón de las manzanas y \emph{contaminar}
+el esquema de polaridad. Y como PE tiene casi el doble de neutrales, su distribución es más
+desbalanceada, lo que explica más varianza y peor F1 en neutral allí.
+
+\begin{analisis}
+  \item[Qué] Descartar NONE; trabajar con 3 clases; convivir con desbalance (PE 26\% neu).
+  \item[Por qué] NONE es conceptualmente distinto de neutral; fusionarlo contaminaría la polaridad.
+  \item[Alternativas descartadas] Mapear NONE$\to$neutral (contaminación conceptual); descartar
+        también NEU (perdería una de las 3 clases del estudio).
+  \item[Qué significa] El esquema de 3 clases de Cut~C es coherente con el de Cuts~A--B.
+  \item[Qué NO significa] No elimina el desbalance: PE sigue teniendo neutral sobre-representado, con
+        efectos en su F1 y varianza (limitación declarada).
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Por qué NONE no se mapea a neutral?
+  \item ¿Qué consecuencia tiene que PE tenga 26\% de neutral frente al 15\% de ES/CR?
+\end{enumerate}
+
+% ============================================================
+\section{Por qué la clase neutral es la difícil}\label{sec:neutral}
+% ============================================================
+
+\nivel{Definición rigurosa}
+En la Tabla~V, el \emph{ranking} por clase es idéntico en \emph{todos} los modelos y métodos:
+positivo $\geq$ negativo $>$ neutral. Neutral es siempre la más débil (encoders $0{,}500$--$0{,}550$;
+LoRA $0{,}613$--$0{,}631$). Que el orden se repita en encoders y generativos indica que la dificultad
+de neutral es \textbf{propiedad de la tarea}, no artefacto de una arquitectura.
+\fuente{\S IV-B «Per-Class Error Analysis»; Tabla~V}
+
+\nivel{La intuición (apoyo)}
+Positivo y negativo tienen \emph{señal} (palabras de alegría o enfado). Neutral es la \emph{ausencia}
+de señal afectiva: hay que detectar que \emph{no} hay emoción, lo cual no tiene un patrón superficial
+distintivo (puede ser lenguaje coloquial sin carga, hechos, u opiniones que se cancelan). Detectar un
+«no-algo» es intrínsecamente más difícil que detectar un «algo».
+
+\begin{analisis}
+  \item[Qué] Neutral es la clase más difícil para todos; LoRA la mejora más que los encoders.
+  \item[Por qué] Neutral = ausencia de señal afectiva, sin patrón superficial.
+  \item[Alternativas descartadas] Atribuirlo a la arquitectura encoder (descartado: el ranking se
+        repite también en generativos).
+  \item[Qué significa] La ventaja de LoRA en neutral sugiere que el preentrenamiento más amplio de
+        Qwen aporta señal extra para identificar el «no-sentimiento».
+  \item[Qué NO significa] Esa explicación causal (Qwen «sabe más» que BETO) es una \emph{hipótesis
+        razonada}, no demostrada (debilidad W9); el dato duro es el $+0{,}06$/$+0{,}11$ en neutral,
+        no su causa.
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Por qué detectar «neutral» es más difícil que detectar positivo o negativo?
+  \item ¿Qué evidencia indica que es propiedad de la tarea y no de la arquitectura?
+\end{enumerate}
+
+% ============================================================
+\section{La familia PEFT: de dónde viene LoRA y qué hay más allá}\label{sec:peftfamily}
+% ============================================================
+
+\nivel{Definición rigurosa}
+PEFT = \emph{Parameter-Efficient Fine-Tuning}: confinar la adaptación a un subconjunto pequeño de
+parámetros con el backbone congelado. Hitos: \textbf{adapters} \externo{Houlsby et al., 2019}
+(capas cuello de botella entre bloques; $<4\%$ de parámetros, pero añaden latencia);
+\textbf{LoRA} \externo{Hu et al., 2021} (sin latencia al fundir); \textbf{QLoRA}
+\externo{Dettmers et al., 2023} (LoRA + cuantización NF4); \textbf{DoRA} \externo{Liu et al., 2022}
+(descompone la actualización en magnitud y dirección). Todo unificado en la librería
+\textbf{PEFT} \externo{Mangrulkar et al., 2022}.
+\fuente{\S II-A; \S VI (Future Work) de \texttt{paper/main.tex}}
+
+\nivel{La intuición (apoyo)}
+Hay muchas formas de «pegar notas adhesivas» a un modelo congelado. Los adapters clásicos añaden
+piezas nuevas (y por eso pesan al inferir). LoRA logra el mismo efecto sin coste de inferencia
+(se funde). DoRA e IA$^3$ son primos más recientes que podrían exprimir aún más el trade-off
+calidad-por-parámetro: por eso aparecen como \emph{future work}, no como parte de los experimentos.
+
+\begin{analisis}
+  \item[Qué] Situar LoRA/QLoRA dentro de la familia PEFT y sus alternativas.
+  \item[Por qué] Justificar la elección (LoRA: sin latencia al fundir; QLoRA: memoria) y delimitar el
+        alcance (DoRA/IA$^3$ no evaluados).
+  \item[Alternativas descartadas] Adapters clásicos (latencia en inferencia); DoRA/IA$^3$ (fuera del
+        alcance, \emph{future work}).
+  \item[Qué significa] LoRA/QLoRA son una elección informada dentro de un abanico, no la única
+        opción.
+  \item[Qué NO significa] No que LoRA sea óptimo entre todos los PEFT; DoRA/IA$^3$ podrían mejorar la
+        frontera (no testado aquí).
+\end{analisis}
+
+\nivel{Autotest}
+\begin{enumerate}[nosep]
+  \item ¿Qué diferencia a los adapters clásicos de LoRA en \emph{inferencia}?
+  \item ¿Por qué DoRA e IA$^3$ aparecen como \emph{future work} y no en los experimentos?
+\end{enumerate}
+
+\end{document}
